@@ -42,13 +42,21 @@ export async function saveResult(
   })
 }
 
+/**
+ * Grade a review. Reads the latest stored copy so a card asked twice in one session is graded
+ * from its current state. Returns undefined if the card no longer exists.
+ */
 export async function saveReview(
-  card: ReviewCard,
+  id: string,
   correct: boolean,
   now = Date.now(),
   d: CcnaDb = db,
-): Promise<ReviewCard> {
-  const next = gradeCard(card, correct, now)
-  await d.cards.put(next)
-  return next
+): Promise<ReviewCard | undefined> {
+  return d.transaction('rw', d.cards, async () => {
+    const card = await d.cards.get(id)
+    if (!card) return undefined
+    const next = gradeCard(card, correct, now)
+    await d.cards.put(next)
+    return next
+  })
 }

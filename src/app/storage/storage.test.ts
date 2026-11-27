@@ -60,10 +60,14 @@ describe('storage', () => {
     await d.open()
   })
 
-  it('reviewing a card reschedules it', async () => {
+  it('reviewing a card reschedules it from its latest stored state', async () => {
     const card = await saveMiss(src, T0, d)
-    await saveReview(card, true, T0, d)
-    expect((await d.cards.get(card.id))?.due).toBeGreaterThan(T0)
+    const missed = await saveReview(card.id, false, T0, d)
+    expect(missed?.due).toBe(T0 + 60_000) // wrong: back in 1 minute
+    const fixed = await saveReview(card.id, true, T0 + 60_000, d)
+    expect(fixed?.reps).toBe(2)
+    expect((await d.cards.get(card.id))?.due).toBeGreaterThan(T0 + 60_000)
+    expect(await saveReview('missing', true, T0, d)).toBeUndefined()
   })
 
   it('settings default, then save', async () => {

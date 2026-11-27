@@ -92,3 +92,27 @@ test('progress export and import round trip', async ({ page }) => {
   await page.getByRole('link', { name: 'Back to hub' }).click()
   await expect(page.getByRole('link', { name: 'Reviews: 1 due' })).toBeVisible()
 })
+
+test('a review answered wrong is asked again until it is right', async ({ page }) => {
+  await page.goto('./#/play/demo/learn?seed=7')
+  const prompt = await answer(page, false)
+  await expect(page.getByRole('status')).toContainText('Added to your reviews')
+
+  await page.goto('./#/review')
+  await expect(page.locator('.choice-prompt')).toHaveText(prompt)
+  await answer(page, false)
+  await expect(page.getByRole('status')).toContainText('get this one again at the end')
+  await page.getByRole('button', { name: 'Next' }).click()
+
+  await expect(page.getByText('Card 2 of 2')).toBeVisible()
+  await expect(page.locator('.choice-prompt')).toHaveText(prompt)
+  await answer(page, true)
+  await page.getByRole('button', { name: 'Finish' }).click()
+  await expect(page.getByText('got 0 right first time')).toBeVisible()
+
+  // Now scheduled for later, so nothing is due and the empty screen says when.
+  await page.getByRole('link', { name: 'Back to hub' }).click()
+  await expect(page.getByRole('link', { name: 'Reviews: 0 due' })).toBeVisible()
+  await page.getByRole('link', { name: 'Reviews: 0 due' }).click()
+  await expect(page.getByText(/Next review is due in \d+ minutes/)).toBeVisible()
+})
