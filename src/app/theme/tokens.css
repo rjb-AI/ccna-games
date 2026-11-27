@@ -19,6 +19,11 @@
   --color-accent: #79c0ff; /* ~9:1 on --color-bg */
   --color-accent-text: #0d1117; /* text on accent backgrounds */
   --color-focus: #ffd33d;
+  --color-good: #56d364; /* ~10:1 on --color-bg */
+  --color-good-bg: #12261e;
+  --color-bad: #ff8e88; /* ~8:1 on --color-bg */
+  --color-bad-bg: #2d1517;
+  --color-star: #ffd33d;
 
   /* Type */
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;

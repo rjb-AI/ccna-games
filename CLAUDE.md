@@ -14,8 +14,10 @@ Target: CCNA 200-301 **v2.0** only.
    must match a real sample in `reference/outputs/`. If there is no sample, stop and ask the user
    for a real one. Do not guess.
 4. **One milestone per pull request.** Do only the milestone asked for (M1, M2, ...; see section
-   7 of the implementation plan). Open a PR when the checks pass, then stop and wait for the user
-   to test on their phone.
+   7 of the implementation plan). Open a PR when the checks pass, tell the user the milestone is
+   done, then stop. When the user approves, merge it yourself with
+   `gh pr merge --squash --delete-branch`, wait for the Pages deploy to finish, and confirm it is
+   live. Never merge without that approval.
 5. **Follow the theme rules** (below). All colours, sizes and spacing come from
    `src/app/theme/tokens.css`.
 
@@ -101,6 +103,21 @@ tests/e2e/                 ← Playwright tests
 - Misses go to the review queue.
 - Readable and playable one-handed on a phone in dark mode.
 - Works offline.
+
+## Adding a game (frame from M1)
+
+- A game is a folder in `src/games/NN-name/` that exports `defineGame({...})` from `index.ts`, and
+  is listed in `src/app/registry.ts`.
+- It supplies `makeQuestion(params, seed, step)` (must be deterministic: use `stepRng` from
+  `src/core/rng`), `check(question, response)`, `describe(question)`, its `levels` and a `View`.
+  Multiple-choice games can reuse `src/app/frame/ChoiceView.tsx`.
+- The frame (`src/app/frame/PlayScreen.tsx`) runs sessions with `src/core/game`, saves results,
+  and sends every miss to the review queue (`src/core/srs`) as `{gameId, levelId, seed, step}`.
+  The review screen rebuilds the question from that, so never change a released level's
+  generator output for a given seed without a new level id.
+- Every level has `topics` with v2.0 blueprint tags like `v2-1.3`.
+- `src/games/00-demo/` is a throwaway from M1. Delete it (and its registry entry) once real games
+  exist.
 
 ## Commands
 
