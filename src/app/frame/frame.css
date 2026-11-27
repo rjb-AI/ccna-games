@@ -1,0 +1,242 @@
+/* Game frame, results, review and settings screens. All values from tokens.css. Nothing fixed/sticky. */
+.screen {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-2) var(--space-4);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-min);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius);
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.btn-secondary,
+button.btn-secondary {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+button {
+  font-weight: 600;
+}
+
+.play-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.play-meta,
+.play-progress {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.play-progress {
+  margin-bottom: var(--space-2);
+}
+
+.choice-prompt {
+  font-size: var(--font-size-h2);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.hint {
+  margin-bottom: var(--space-2);
+}
+
+.choice-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-1);
+}
+
+@media (min-width: 640px) {
+  .choice-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.choice-btn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--space-1) var(--space-2);
+  text-align: left;
+  font-size: var(--font-size-body);
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-border);
+}
+
+.choice-btn:disabled {
+  cursor: default;
+}
+
+.choice-btn.is-right {
+  border-color: var(--color-good);
+  background-color: var(--color-good-bg);
+}
+
+.choice-btn.is-wrong {
+  border-color: var(--color-bad);
+  background-color: var(--color-bad-bg);
+}
+
+.choice-btn .mark {
+  font-weight: 700;
+}
+
+.choice-btn.is-right .mark {
+  color: var(--color-good);
+}
+
+.choice-btn.is-wrong .mark {
+  color: var(--color-bad);
+}
+
+.feedback {
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius);
+  border: 2px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.feedback.is-right {
+  border-color: var(--color-good);
+}
+
+.feedback.is-wrong {
+  border-color: var(--color-bad);
+}
+
+.feedback-title {
+  font-weight: 700;
+}
+
+.feedback.is-right .feedback-title {
+  color: var(--color-good);
+}
+
+.feedback.is-wrong .feedback-title {
+  color: var(--color-bad);
+}
+
+.stars {
+  color: var(--color-star);
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+
+.stars-empty {
+  color: var(--color-text-muted);
+}
+
+.results h1:focus {
+  outline: none;
+}
+
+.results-stars {
+  font-size: var(--font-size-h1);
+}
+
+.results-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-1);
+  margin: 0 0 var(--space-2);
+}
+
+.results-stats div {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-1) var(--space-2);
+}
+
+.results-stats dt {
+  color: var(--color-text-muted);
+}
+
+.results-stats dd {
+  margin: 0;
+  font-size: var(--font-size-h2);
+  font-weight: 700;
+}
+
+.missed {
+  padding-left: var(--space-3);
+}
+
+.missed li {
+  margin-bottom: var(--space-2);
+}
+
+.missed p {
+  margin: 0;
+}
+
+.results-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.seed {
+  color: var(--color-text-muted);
+}
+
+.toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-height: var(--tap-min);
+  padding: var(--space-1) 0;
+  cursor: pointer;
+}
+
+.toggle input {
+  width: 28px;
+  height: 28px;
+  margin: 10px;
+  flex-shrink: 0;
+  accent-color: var(--color-accent);
+}
+
+.file-btn {
+  position: relative;
+  cursor: pointer;
+}
+
+.file-btn input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-btn:focus-within {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.settings-message {
+  font-weight: 600;
+}
