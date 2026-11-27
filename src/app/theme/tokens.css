@@ -1,0 +1,40 @@
+/*
+ * Theme tokens: the single source of truth for colours, type, spacing and sizes.
+ * Rules (see CLAUDE.md):
+ *   - Dark background set explicitly, never the browser default.
+ *   - Text at full opacity with strong contrast. No opacity or alpha on text colours.
+ *   - Body text at least 20px.
+ *   - Tap targets at least 48px.
+ *   - Nothing fixed or sticky at the top of the screen.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Colours (all solid, no alpha) */
+  --color-bg: #0d1117;
+  --color-surface: #161b22;
+  --color-border: #3d4652;
+  --color-text: #f5f7fa; /* ~17:1 on --color-bg */
+  --color-text-muted: #c9d1d9; /* ~12:1 on --color-bg, still full opacity */
+  --color-accent: #79c0ff; /* ~9:1 on --color-bg */
+  --color-accent-text: #0d1117; /* text on accent backgrounds */
+  --color-focus: #ffd33d;
+
+  /* Type */
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-size-body: 20px;
+  --font-size-small: 20px; /* nothing smaller than body */
+  --font-size-h2: 24px;
+  --font-size-h1: 30px;
+  --line-height: 1.5;
+
+  /* Sizes */
+  --tap-min: 48px;
+  --radius: 8px;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --content-max: 960px;
+}

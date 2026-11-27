@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Vite build output
+dist/
+dist-ssr/
+dev-dist/
+*.local
+.vite/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Test output
+coverage/
+playwright-report/
+blob-report/
+test-results/
+playwright/.cache/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editor and OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.sw?
+
+# Env files
+.env
+.env.*
+!.env.example

@@ -1,0 +1,63 @@
+/* Global element styles. All values come from tokens.css. */
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height);
+  -webkit-text-size-adjust: 100%;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  line-height: 1.2;
+  margin: 0 0 var(--space-2);
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  line-height: 1.25;
+  margin: 0 0 var(--space-1);
+}
+
+p {
+  margin: 0 0 var(--space-2);
+}
+
+a {
+  color: var(--color-accent);
+}
+
+a,
+button {
+  min-height: var(--tap-min);
+  min-width: var(--tap-min);
+}
+
+button {
+  font: inherit;
+  color: var(--color-accent-text);
+  background-color: var(--color-accent);
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0 var(--space-2);
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
