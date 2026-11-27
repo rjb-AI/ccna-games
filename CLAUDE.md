@@ -15,9 +15,9 @@ Target: CCNA 200-301 **v2.0** only.
    for a real one. Do not guess.
 4. **One milestone per pull request.** Do only the milestone asked for (M1, M2, ...; see section
    7 of the implementation plan). Open a PR when the checks pass, tell the user the milestone is
-   done, then stop. When the user approves, merge the PR yourself (`gh pr merge --squash
---delete-branch`), wait for the Pages deploy to finish, and confirm it is live. Never merge
-   without that approval.
+   done, then stop. When the user approves, merge it yourself with
+   `gh pr merge --squash --delete-branch`, wait for the Pages deploy to finish, and confirm it is
+   live. Never merge without that approval.
 5. **Follow the theme rules** (below). All colours, sizes and spacing come from
    `src/app/theme/tokens.css`.
 
