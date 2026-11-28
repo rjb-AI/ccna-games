@@ -17,6 +17,8 @@ export interface Field {
 export interface Fact {
   label: string
   value: string
+  /** A sentence rather than a value (address, number): shown in the normal font. */
+  prose?: boolean
 }
 
 export interface FieldsQuestion {

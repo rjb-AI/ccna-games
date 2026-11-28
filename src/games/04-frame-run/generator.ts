@@ -498,7 +498,11 @@ function frameFacts(s: Scenario, st: Scenario['steps'][number]): Fact[] {
     },
   ]
   if (st.pauseBefore)
-    facts.push({ label: 'Note', value: 'Several minutes have passed since the last frame.' })
+    facts.push({
+      label: 'Note',
+      value: 'Several minutes have passed since the last frame.',
+      prose: true,
+    })
   return facts
 }
 

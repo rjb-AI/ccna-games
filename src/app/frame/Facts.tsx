@@ -8,7 +8,7 @@ export function Facts({ facts }: { facts: readonly Fact[] }) {
       {facts.map((f) => (
         <div key={f.label}>
           <dt>{f.label}</dt>
-          <dd>{f.value}</dd>
+          <dd className={f.prose ? 'is-prose' : undefined}>{f.value}</dd>
         </div>
       ))}
     </dl>

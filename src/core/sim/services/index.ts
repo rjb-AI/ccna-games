@@ -1,2 +1,2 @@
-// Placeholder: core/sim/services is built in a later milestone. See docs/ccna-games-implementation-plan.md section 5.
-export {}
+/** Network services: ACLs. NAT/PAT, DHCP, DNS and ARP arrive with M7. */
+export * from './acl'
