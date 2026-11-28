@@ -4,6 +4,7 @@
  * packets at each candidate ACL and comparing with the intended policy.
  */
 import type { ChoiceQuestion } from '../../app/frame/choice'
+import type { BitsQuestion } from '../../app/frame/bits'
 import type { FieldsQuestion } from '../../app/frame/fields'
 import type { LabelsQuestion } from '../../app/frame/labels'
 import type { MixedQuestion } from '../../app/frame/mixed'
@@ -35,7 +36,13 @@ const ACTION_VERB = { permit: 'permits', deny: 'denies' } as const
 import type { Topology } from '../../core/topology'
 
 export type BouncerKind =
-  'door-standard' | 'door-extended' | 'wildcard' | 'builder' | 'placement' | 'breakfix'
+  | 'door-standard'
+  | 'door-extended'
+  | 'wildcard'
+  | 'wildcard-bits'
+  | 'builder'
+  | 'placement'
+  | 'breakfix'
 export interface BouncerParams {
   kinds: readonly BouncerKind[]
 }
@@ -250,6 +257,25 @@ function doorQuestion(rng: Rng, kind: 'standard' | 'extended'): LabelsQuestion {
       kind === 'standard'
         ? 'Only the source address matters. First match wins.'
         : 'Check protocol, source, destination and port, line by line. First match wins.',
+  }
+}
+
+/**
+ * Build the wildcard on the bit board: the 0 bits must match, the 1 bits are "don't care".
+ * The range is a real subnet; its wildcard comes from core prefixToWildcard.
+ */
+function wildcardBitsQuestion(rng: Rng): BitsQuestion {
+  const p = rng.int(16, 30)
+  const base = networkOf(((10 << 24) | (rng.int(0, 255) << 16) | (rng.int(0, 255) << 8)) >>> 0, p)
+  const last = (base + 2 ** (32 - p) - 1) >>> 0
+  const target = prefixToWildcard(p)
+  return {
+    prompt: `Build the wildcard so "${fmt(base)} + wildcard" matches every address from ${fmt(base)} to ${fmt(last)}.`,
+    octets: 4,
+    target,
+    valueName: 'Wildcard',
+    explanation: `The range is ${fmt(base)}/${p}: ${p} bits must match (0 in the wildcard) and ${32 - p} can be anything (1). Wildcard ${fmt(target)}, the inverse of mask ${fmt(prefixToMask(p))}.`,
+    hint: 'A wildcard 0 means "this bit must match", a 1 means "don\'t care".',
   }
 }
 
@@ -627,6 +653,8 @@ export function makeQuestion(params: BouncerParams, seed: number, step: number):
   const rng = stepRng(seed, step)
   const kind = rng.pick(params.kinds)
   switch (kind) {
+    case 'wildcard-bits':
+      return { kind: 'bits', q: wildcardBitsQuestion(rng) }
     case 'door-standard':
       return { kind: 'labels', q: doorQuestion(rng, 'standard') }
     case 'door-extended':

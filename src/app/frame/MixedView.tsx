@@ -1,4 +1,5 @@
 import { BinsView } from './BinsView'
+import { BitsView } from './BitsView'
 import { ChoiceView } from './ChoiceView'
 import { DiagramLabelsView } from './DiagramLabelsView'
 import { SwipeView } from './SwipeView'
@@ -31,6 +32,15 @@ export function MixedView(props: QuestionViewProps<MixedQuestion, MixedResponse>
         {...rest}
         question={m.q}
         response={response !== null && isCli(response) ? response : null}
+      />
+    )
+  }
+  if (m.kind === 'bits') {
+    return (
+      <BitsView
+        {...rest}
+        question={m.q}
+        response={typeof response === 'number' ? response : null}
       />
     )
   }

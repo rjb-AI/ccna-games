@@ -7,8 +7,8 @@ of each column.
 ## Doing
 
 - **Game-like mechanics, in the MECHANICS.md build order** (user: "do them in the order you
-  suggested"). Steps 1-4 done (bins, tap the diagram, labels on the diagram, swipe deck).
-  Now: step 5, bit board; then match pairs and code tiles, packet path, grid placement. Still to
+  suggested"). Steps 1-5 done (bins, tap the diagram, labels on the diagram, swipe deck, bit
+  board). Now: step 6, match pairs and code tiles; then match pairs and code tiles, packet path, grid placement. Still to
   move onto the diagram: Airwaves channels (needs a floor-plan visual), AP ports. Before each: inspiration from `docs/INSPIRATION.md` (user: look up
   games of each type first). Still to move onto tapping: Neighbor Detective (tap the mistake),
   Longest Match rows, ACL/YAML bad line, router ID row.
@@ -20,6 +20,8 @@ of each column.
 
 - **Swipe deck for more games**: Hex Garden legal/broken, Wi-Fi "will it connect?", AI desk,
   FHRP preempt (each needs new level ids).
+- **Bit board for more games**: Subnet Sprint scratchpad beside the keypad questions, EUI-64
+  workbench (flip the 7th bit), IPv6 prune, syslog trap slider.
 - **ACL door on one screen**: long ACL lines need a scroll to read on a phone; find a compact
   layout that still shows real IOS syntax.
 
@@ -60,6 +62,12 @@ Reusable interaction kinds, then which games use them:
 - **Fix the file**: Playbook Runner, tap lines to indent/outdent YAML.
 
 ## Done
+
+- 28 Nov: **Bit board** (mechanics step 5): one row of 8 bits per octet with place values,
+  each octet's value live, the whole value and its /prefix live, broken mask rules named (core
+  `maskIssue`). Drill checks itself the moment it matches. Subnet Sprint: binary on the bit
+  board, build masks and wildcards, binary rush (Drill). ACL Bouncer: build the wildcard for a
+  range.
 
 - 28 Nov: **Swipe deck** (mechanics step 4): one card at a time; drag left/right (tilt, preview
   label, springs back before the commit point), two big buttons or arrow keys. Learn shows a
