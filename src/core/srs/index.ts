@@ -105,14 +105,19 @@ export function recordMiss(
   return gradeCard(existing, false, now)
 }
 
-/** Grade a review: right = Good, wrong = Again. */
+/**
+ * Grade a review: right = Good, wrong = Again.
+ * A wrong answer keeps the card due now (FSRS alone would wait 1 minute), so a missed question
+ * stays on the to-do list until it is answered right. FSRS still records the lapse.
+ */
 export function gradeCard(card: ReviewCard, correct: boolean, now: number): ReviewCard {
   const { card: next } = scheduler.next(
     toFsrs(card),
     new Date(now),
     correct ? Rating.Good : Rating.Again,
   )
-  return fromFsrs(card, next)
+  const graded = fromFsrs(card, next)
+  return correct ? graded : { ...graded, due: now }
 }
 
 export function isDue(card: ReviewCard, now: number): boolean {

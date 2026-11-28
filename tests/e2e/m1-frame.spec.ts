@@ -116,3 +116,21 @@ test('a review answered wrong is asked again until it is right', async ({ page }
   await page.getByRole('link', { name: 'Reviews: 0 due' }).click()
   await expect(page.getByText(/Next review is due in \d+ minutes/)).toBeVisible()
 })
+
+test('quitting after a wrong review keeps the card due', async ({ page }) => {
+  await page.goto('./#/play/demo/learn?seed=7')
+  await answer(page, false)
+  await expect(page.getByRole('status')).toContainText('Added to your reviews')
+  await page.goto('./#/')
+  await expect(page.getByRole('link', { name: 'Reviews: 1 due' })).toBeVisible()
+
+  await page.getByRole('link', { name: 'Reviews: 1 due' }).click()
+  await answer(page, false)
+  await expect(page.getByRole('status')).toContainText('Not quite')
+  await page.getByRole('link', { name: 'Quit' }).click()
+  await expect(page.getByRole('link', { name: 'Reviews: 1 due' })).toBeVisible()
+
+  // Still there after closing the app.
+  await page.reload()
+  await expect(page.getByRole('link', { name: 'Reviews: 1 due' })).toBeVisible()
+})
