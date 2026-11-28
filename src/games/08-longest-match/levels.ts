@@ -1,0 +1,60 @@
+import type { LevelDef } from '../../core/game'
+import type { MatchParams } from './generator'
+
+export const LEVELS: readonly LevelDef<MatchParams>[] = [
+  {
+    id: 'pick-route',
+    title: 'Learn: longest prefix wins',
+    mode: 'learn',
+    generatorParams: { kinds: ['pick-route'] },
+    passScore: 60,
+    questionCount: 6,
+    topics: ['v2-3.1'],
+  },
+  {
+    id: 'installed',
+    title: 'Learn: AD and metric',
+    mode: 'learn',
+    generatorParams: { kinds: ['installed', 'ad'] },
+    passScore: 60,
+    questionCount: 6,
+    topics: ['v2-3.1'],
+  },
+  {
+    id: 'static',
+    title: 'Learn: static, default and host routes',
+    mode: 'learn',
+    generatorParams: { kinds: ['static-cmd'] },
+    passScore: 60,
+    questionCount: 5,
+    topics: ['v2-3.2'],
+  },
+  {
+    id: 'floating',
+    title: 'Learn: floating static routes',
+    mode: 'learn',
+    generatorParams: { kinds: ['floating'] },
+    passScore: 60,
+    questionCount: 5,
+    topics: ['v2-3.2'],
+  },
+  {
+    id: 'routing-drill',
+    title: 'Drill: route rush',
+    mode: 'drill',
+    generatorParams: { kinds: ['pick-route', 'pick-route', 'installed', 'ad', 'static-cmd'] },
+    passScore: 70,
+    timeLimit: 200,
+    questionCount: 10,
+    topics: ['v2-3.1', 'v2-3.2'],
+  },
+  {
+    id: 'breakfix',
+    title: 'Break-Fix: the wrong way out',
+    mode: 'breakfix',
+    generatorParams: { kinds: ['breakfix'] },
+    passScore: 60,
+    questionCount: 5,
+    topics: ['v2-3.1', 'v2-3.2'],
+  },
+]
