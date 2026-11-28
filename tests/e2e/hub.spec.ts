@@ -48,3 +48,8 @@ test('hub loads offline after the first visit', async ({ page, context }) => {
   ).toBeAttached()
   await context.setOffline(false)
 })
+
+test('settings shows the app version', async ({ page }) => {
+  await page.goto('./#/settings')
+  await expect(page.getByText(/^Version [0-9a-f]{7}|^Version dev/)).toBeVisible()
+})
