@@ -6,8 +6,8 @@ import { DOMAINS } from './domains'
 import { GAMES } from './registry'
 import { TOP_LEVEL_TOPICS, isBlueprintTopic, parentTopic } from '../core/game/blueprint'
 
-// Turned on in M11, once every game exists. Until then the test lists what is missing.
-const ENFORCE_FULL_COVERAGE = false
+// Every v2.0 topic has at least one level (plan section 8.4). Keep it that way.
+const ENFORCE_FULL_COVERAGE = true
 
 describe('registry', () => {
   it('game ids and level ids are unique', () => {
