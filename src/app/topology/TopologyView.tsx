@@ -7,7 +7,7 @@
  * drawing ("SW-B Gi0/2 to SW-C Gi0/1 · 1G·4"), so nothing is lost when names are dots. In pick
  * mode (tap-to-answer questions) a tap on one of the options also picks it.
  */
-import { useState } from 'react'
+import { type CSSProperties, useState } from 'react'
 import type { TopologyVisual } from '../frame/visuals'
 import {
   BADGE_PX,
@@ -24,7 +24,8 @@ import './topology.css'
 export interface TopologyPick {
   /** What can be picked: device ids, or port ids ("device:port"). */
   options: readonly string[]
-  picked: string | null
+  /** Picked ids (several in multi-pick questions). */
+  picked: readonly string[]
   /** After checking: right/wrong per option id. */
   marks?: Readonly<Record<string, 'right' | 'wrong'>>
   disabled?: boolean
@@ -134,7 +135,7 @@ export function TopologyView({
   const pickClass = (id: string) => {
     if (!pick?.options.includes(id)) return ''
     const mark = pick.marks?.[id]
-    return ` is-option${pick.picked === id ? ' is-picked' : ''}${mark ? ` is-${mark}` : ''}`
+    return ` is-option${pick.picked.includes(id) ? ' is-picked' : ''}${mark ? ` is-${mark}` : ''}`
   }
   const keyTap = (id: string) => (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -291,6 +292,34 @@ export function TopologyView({
             )
           })}
           {links.map((g) => g.ports.map(portMark))}
+          {(v.flows ?? []).map((f, i) => {
+            const g = links.find((x) => x.l.id === f.link)
+            if (!g) return null
+            const fwd = g.l.a.device === f.from
+            const [x0, y0, x1, y1] = fwd ? [g.ax, g.ay, g.bx, g.by] : [g.bx, g.by, g.ax, g.ay]
+            const style = {
+              '--dx': `${x1 - x0}px`,
+              '--dy': `${y1 - y0}px`,
+              animationDelay: `${f.delayMs ?? 0}ms`,
+            } as CSSProperties
+            return (
+              <g key={`flow-${i}`} className="topo-packet" style={style} aria-hidden="true">
+                <circle cx={x0} cy={y0} r={12 * u} strokeWidth={3 * u} />
+                {f.label && (
+                  <text
+                    x={x0}
+                    y={y0 - font * 1.1}
+                    fontSize={font}
+                    strokeWidth={6 * u}
+                    dominantBaseline="central"
+                    textAnchor="middle"
+                  >
+                    {f.label}
+                  </text>
+                )}
+              </g>
+            )
+          })}
           {t.devices.map((d) =>
             v.badgeDevices?.includes(d.id) ? badge(d.id, badgeAt(d, u)) : null,
           )}

@@ -51,3 +51,14 @@ gives the fault's symptom and fix.
 `generator.test.ts`: deterministic; one right answer per question; action answers re-derived
 from the tables shown on screen; learn answers use the arrival port; one aging pause per drill;
 all three faults appear. `core/sim/l2/switching.test.ts` covers the switching rules.
+
+## Be the switch (mechanics step 7)
+
+| Level             | Scenario   | What you do                                                           |
+| ----------------- | ---------- | --------------------------------------------------------------------- |
+| `be-switch`       | two VLANs  | Tap every port the frame leaves by on SW1's faceplate, or filter/drop |
+| `be-switch-trunk` | trunk      | Same, with a trunk port; exits show "tag N" or "untagged"             |
+| `be-two-switches` | two-switch | Same, as whichever switch the frame is at                             |
+
+Exits come from core `processFrame` (`out`, with tagging). Each wrong port gets the rule it
+breaks (back out of the arrival port, another VLAN, known destination elsewhere, dropped).

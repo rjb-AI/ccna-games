@@ -278,3 +278,29 @@
   stroke: var(--color-focus);
   stroke-width: 4px;
 }
+
+/* Packet path: a packet slides from one end of its link to the other and stays there. */
+.topo-packet {
+  animation: topo-packet 900ms ease-in-out both;
+}
+
+.topo-packet circle {
+  fill: var(--color-accent);
+  stroke: var(--color-bg);
+}
+
+@keyframes topo-packet {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(var(--dx), var(--dy));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topo-packet {
+    animation: none;
+    transform: translate(var(--dx), var(--dy));
+  }
+}
