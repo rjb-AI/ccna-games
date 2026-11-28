@@ -158,3 +158,22 @@ test('progress export and import round trip', async ({ page }) => {
   await page.getByRole('link', { name: 'Back to hub' }).click()
   await expect(page.getByRole('link', { name: 'Reviews: 1 due' })).toBeVisible()
 })
+
+test('time running out: the question on screen goes to reviews, the rest count as not answered', async ({
+  page,
+}) => {
+  await page.clock.install()
+  await page.goto('./#/play/subnet-sprint/sprint?seed=3')
+  await expect(page.locator('#question-prompt')).toBeVisible()
+  await page.clock.fastForward(301_000)
+
+  await expect(page.getByRole('heading', { level: 1, name: 'Not passed yet' })).toBeVisible()
+  await expect(page.getByText('Well done')).toHaveCount(0)
+  await expect(page.getByText('8 questions not answered')).toBeVisible()
+  const missed = page.locator('.missed li')
+  await expect(missed).toHaveCount(1)
+  await expect(missed).toContainText('Time ran out before you answered')
+
+  await page.getByRole('link', { name: 'Back to hub' }).click()
+  await expect(page.getByRole('link', { name: 'Reviews: 1 due' })).toBeVisible()
+})

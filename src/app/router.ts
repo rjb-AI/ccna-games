@@ -9,16 +9,32 @@ export type Route =
   | { name: 'review'; gameId?: string }
   | { name: 'settings' }
 
+/** decodeURIComponent that keeps a malformed part (like a lone "%") as typed instead of throwing. */
+function safeDecode(part: string): string {
+  try {
+    return decodeURIComponent(part)
+  } catch {
+    return part
+  }
+}
+
+/** The seed from the query: only digits, so "", "-1", "1.5" and a missing seed give undefined. */
+function parseSeed(raw: string | null): number | undefined {
+  if (raw === null || !/^\d+$/.test(raw)) return undefined
+  const seed = Number(raw)
+  return Number.isSafeInteger(seed) ? seed : undefined
+}
+
 export function parseHash(hash: string): Route {
   const [path = '', query = ''] = hash.replace(/^#\/?/, '').split('?')
-  const parts = path.split('/').filter(Boolean).map(decodeURIComponent)
+  const parts = path.split('/').filter(Boolean).map(safeDecode)
   if (parts[0] === 'play' && parts[1] && parts[2]) {
-    const seed = Number(new URLSearchParams(query).get('seed'))
+    const seed = parseSeed(new URLSearchParams(query).get('seed'))
     return {
       name: 'play',
       gameId: parts[1],
       levelId: parts[2],
-      ...(query && Number.isInteger(seed) && seed >= 0 ? { seed } : {}),
+      ...(seed === undefined ? {} : { seed }),
     }
   }
   if (parts[0] === 'game' && parts[1]) {

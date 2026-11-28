@@ -12,6 +12,7 @@ import {
   starsFor,
   startSession,
   timeLeft,
+  timeUp,
 } from './index'
 
 const level: LevelDef = {
@@ -93,5 +94,47 @@ describe('core/game session', () => {
     // 100 + 100 + 100 + 200 (4th in a row) + 0 + 100
     expect(r.points).toBe(600)
     expect(r.bestStreak).toBe(4)
+  })
+
+  describe('time up', () => {
+    it('the question on screen with no answer is missed and goes to review', () => {
+      let s = startSession('g', level, 9, 0, true)
+      s = recordAnswer(s, 'q0', right)
+      const { session, toReview } = timeUp(s, 31_000, 'q1')
+      expect(toReview).toBe(1)
+      const r = scoreSession(session)
+      expect(r.timedOut).toBe(true)
+      expect(r.answered).toBe(1)
+      expect(r.unanswered).toBe(3)
+      expect(r.missed).toHaveLength(1)
+      expect(r.missed[0]).toMatchObject({ step: 1, prompt: 'q1', correct: false, unanswered: true })
+      expect(r.accuracy).toBe(100)
+      expect(r.score).toBe(25)
+    })
+
+    it('an answer given but not confirmed is kept; it was already sent to review', () => {
+      let s = startSession('g', level, 9, 0, true)
+      s = recordAnswer(s, 'q0', right)
+      const { session, toReview } = timeUp(s, 31_000, 'q1', wrong)
+      expect(toReview).toBeNull()
+      const r = scoreSession(session)
+      expect(r).toMatchObject({ answered: 2, unanswered: 2, timedOut: true })
+      expect(r.missed).toEqual([{ ...wrong, step: 1, prompt: 'q1' }])
+    })
+
+    it('time up on the last question still counts as timed out', () => {
+      let s = startSession('g', { ...level, questionCount: 1 }, 9, 0, true)
+      const t = timeUp(s, 31_000, 'q0')
+      s = t.session
+      const r = scoreSession(s)
+      expect(r).toMatchObject({ timedOut: true, answered: 0, unanswered: 1, correct: 0 })
+      expect(t.toReview).toBe(0)
+    })
+
+    it('a finished session has nothing unanswered', () => {
+      let s = startSession('g', level, 9, 0, true)
+      for (const c of [right, right, right, right]) s = recordAnswer(s, 'q', c)
+      expect(scoreSession(endSession(s, 1000)).unanswered).toBe(0)
+    })
   })
 })

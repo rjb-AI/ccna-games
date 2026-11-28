@@ -7,6 +7,11 @@
   border-radius: var(--radius);
 }
 
+.topo-scroll {
+  overflow-x: auto;
+}
+
+/* Never narrower than its natural width (inline min-width), so labels stay 20px or more. */
 .topo svg {
   display: block;
   width: 100%;
@@ -59,16 +64,16 @@
   font-weight: 700;
 }
 
-.topo-port circle {
+.topo-port .topo-ring {
   fill: var(--color-surface);
   stroke: var(--color-accent);
 }
 
-.topo-port.is-hot circle {
+.topo-port.is-hot .topo-ring {
   stroke: var(--color-focus);
 }
 
-.topo-port.is-blocked circle {
+.topo-port.is-blocked .topo-ring {
   stroke: var(--color-bad);
 }
 

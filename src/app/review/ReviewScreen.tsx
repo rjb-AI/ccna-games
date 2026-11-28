@@ -4,6 +4,7 @@ import type { ReviewCard } from '../../core/srs'
 import { findGame } from '../registry'
 import { href } from '../router'
 import { SESSION_SIZE, loadQueue } from './queue'
+import { Feedback } from '../frame/Feedback'
 import { useQuestionStart } from '../frame/useQuestionStart'
 import { saveReview } from '../storage/progress'
 import { formatDueIn, useNow } from '../time'
@@ -126,22 +127,16 @@ export function ReviewScreen({ gameId }: { gameId?: string }) {
         })}
       </div>
       {pending && (
-        <div
-          className={`feedback ${pending.check.correct ? 'is-right' : 'is-wrong'}`}
-          role="status"
-          aria-live="polite"
-        >
-          <p className="feedback-title">
-            {pending.check.correct ? 'Correct' : `Not quite. Answer: ${pending.check.expected}`}
-          </p>
-          <p>{pending.check.explanation}</p>
-          {!pending.check.correct && (
-            <p>You&rsquo;ll get this one again at the end of this review.</p>
-          )}
-          <button type="button" ref={nextRef} onClick={onNext}>
-            {isLast ? 'Finish' : 'Next'}
-          </button>
-        </div>
+        <Feedback
+          check={pending.check}
+          showExplanation
+          note={
+            pending.check.correct ? null : 'You’ll get this one again at the end of this review.'
+          }
+          nextLabel={isLast ? 'Finish' : 'Next'}
+          onNext={onNext}
+          nextRef={nextRef}
+        />
       )}
     </main>
   )

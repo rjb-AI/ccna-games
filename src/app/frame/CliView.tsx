@@ -8,7 +8,14 @@ import { COMMANDS } from '../../core/cli/commands'
 import { nextWords } from '../../core/cli/parser'
 import { promptOf } from '../../core/cli/session'
 import { describeRequirement } from '../../core/device/checks'
-import { type CliQuestion, type CliResponse, runCli } from './cli'
+import {
+  type CliQuestion,
+  type CliResponse,
+  HISTORY_START,
+  historyMove,
+  linesToCheck,
+  runCli,
+} from './cli'
 import type { QuestionViewProps } from './types'
 import { Prompt } from './Prompt'
 import { Visuals } from './VisualsView'
@@ -20,7 +27,7 @@ export function CliView(props: QuestionViewProps<CliQuestion, CliResponse>) {
   const answered = response !== null
   const [lines, setLines] = useState<string[]>([])
   const [input, setInput] = useState('')
-  const [histIdx, setHistIdx] = useState<number | null>(null)
+  const [nav, setNav] = useState(HISTORY_START)
   const [helpOpen, setHelpOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const termRef = useRef<HTMLDivElement>(null)
@@ -42,9 +49,16 @@ export function CliView(props: QuestionViewProps<CliQuestion, CliResponse>) {
   const submit = () => {
     setLines((l) => [...l, input])
     setInput('')
-    setHistIdx(null)
+    setNav(HISTORY_START)
     setHelpOpen(false)
     inputRef.current?.focus()
+  }
+
+  const startOver = () => {
+    setLines([])
+    setInput('')
+    setNav(HISTORY_START)
+    setHelpOpen(false)
   }
 
   /** Put a word in place of the partly typed last word. */
@@ -63,20 +77,9 @@ export function CliView(props: QuestionViewProps<CliQuestion, CliResponse>) {
 
   const history = (dir: -1 | 1) => {
     const typed = lines.filter((l) => l.trim())
-    if (!typed.length) return
-    const next =
-      histIdx === null
-        ? dir === -1
-          ? typed.length - 1
-          : null
-        : Math.min(Math.max(histIdx + dir, 0), typed.length)
-    if (next === null || next >= typed.length) {
-      setHistIdx(null)
-      setInput('')
-    } else {
-      setHistIdx(next)
-      setInput(typed[next] as string)
-    }
+    const moved = historyMove(nav, typed, input, dir)
+    setNav(moved.nav)
+    setInput(moved.input)
   }
 
   const chipTap = (s: { word: string; isArg: boolean }) => {
@@ -165,7 +168,7 @@ export function CliView(props: QuestionViewProps<CliQuestion, CliResponse>) {
 
       {!answered && (
         <>
-          <div className="cli-chips" aria-label="Next word">
+          <div className="cli-chips" role="group" aria-label="Next word">
             {suggestions.slice(0, MAX_CHIPS).map((s) => (
               <button
                 key={s.word}
@@ -200,7 +203,9 @@ export function CliView(props: QuestionViewProps<CliQuestion, CliResponse>) {
             <button
               type="button"
               className="btn-secondary"
+              aria-label="Show what can come next"
               aria-expanded={helpOpen}
+              aria-controls="cli-help"
               onClick={() => setHelpOpen((o) => !o)}
             >
               ?
@@ -209,34 +214,26 @@ export function CliView(props: QuestionViewProps<CliQuestion, CliResponse>) {
               Enter
             </button>
           </div>
-          {helpOpen && (
-            <dl className="cli-help" aria-label="What can come next">
-              {suggestions.length === 0 ? (
-                <div>
-                  <dt>Nothing</dt>
-                  <dd>No command in this level continues from here.</dd>
+          <dl id="cli-help" className="cli-help" aria-label="What can come next" hidden={!helpOpen}>
+            {suggestions.length === 0 ? (
+              <div>
+                <dt>Nothing</dt>
+                <dd>No command in this level continues from here.</dd>
+              </div>
+            ) : (
+              suggestions.map((s) => (
+                <div key={s.word}>
+                  <dt>{s.word}</dt>
+                  <dd>{s.help}</dd>
                 </div>
-              ) : (
-                suggestions.map((s) => (
-                  <div key={s.word}>
-                    <dt>{s.word}</dt>
-                    <dd>{s.help}</dd>
-                  </div>
-                ))
-              )}
-            </dl>
-          )}
+              ))
+            )}
+          </dl>
           <div className="cli-actions">
-            <button type="button" onClick={() => onAnswer({ lines })}>
+            <button type="button" onClick={() => onAnswer({ lines: linesToCheck(lines, input) })}>
               Check work order
             </button>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => {
-                setLines([])
-              }}
-            >
+            <button type="button" className="btn-secondary" onClick={startOver}>
               Start over
             </button>
           </div>

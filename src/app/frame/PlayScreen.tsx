@@ -14,6 +14,7 @@ import {
   scoreSession,
   startSession,
   timeLeft,
+  timeUp,
 } from '../../core/game'
 import { randomSeed } from '../../core/rng'
 import { findGame } from '../registry'
@@ -21,6 +22,7 @@ import { href } from '../router'
 import { useGamePlaySettings } from '../settingsStore'
 import { requestPersistence } from '../storage/db'
 import { saveMiss, saveResult } from '../storage/progress'
+import { Feedback } from './Feedback'
 import { ResultsScreen } from './ResultsScreen'
 import { useQuestionStart } from './useQuestionStart'
 import type { RegisteredGame } from './types'
@@ -95,6 +97,19 @@ function Play({ game, level, initialSeed, onRestart }: PlayProps) {
     [game, level, session.seed, step],
   )
 
+  /** The one place a step of this session goes to the review queue. */
+  const sendToReview = useCallback(
+    (seed: number, missedStep: number) =>
+      saveMiss({
+        gameId: game.id,
+        levelId: level.id,
+        seed,
+        step: missedStep,
+        topics: level.topics,
+      }),
+    [game.id, level.id, level.topics],
+  )
+
   const finish = useCallback(
     (s: Session) => {
       const r = scoreSession(endSession(s, Date.now()))
@@ -121,11 +136,14 @@ function Play({ game, level, initialSeed, onRestart }: PlayProps) {
       const { session: s, pending: p, question: q } = latest.current
       if (timeLeft(s, t) !== 0) return
       window.clearInterval(id)
-      // Time is up: keep an answer that was given but not yet confirmed, then end.
-      finish(p ? recordAnswer(s, game.describe(q), p.check) : s)
+      // Time is up. core/game decides what counts: the question on screen is kept as answered
+      // (if it was) or as missed and sent to review.
+      const up = timeUp(s, t, game.describe(q), p?.check)
+      if (up.toReview !== null) void sendToReview(s.seed, up.toReview)
+      finish(up.session)
     }, 250)
     return () => window.clearInterval(id)
-  }, [session.timeLimit, result, finish, game])
+  }, [session.timeLimit, result, finish, game, sendToReview])
 
   useEffect(() => {
     if (pending) nextRef.current?.focus()
@@ -147,13 +165,9 @@ function Play({ game, level, initialSeed, onRestart }: PlayProps) {
     const check = game.check(question, response)
     setPending({ response, check, saved: check.correct, step })
     if (!check.correct) {
-      void saveMiss({
-        gameId: game.id,
-        levelId: level.id,
-        seed: session.seed,
-        step,
-        topics: level.topics,
-      }).then(() => setPending((p) => (p?.step === step ? { ...p, saved: true } : p)))
+      void sendToReview(session.seed, step).then(() =>
+        setPending((p) => (p?.step === step ? { ...p, saved: true } : p)),
+      )
     }
   }
 
@@ -164,8 +178,6 @@ function Play({ game, level, initialSeed, onRestart }: PlayProps) {
     setSession(s)
     if (isOver(s)) finish(s)
   }
-
-  const showExplanation = level.mode !== 'drill'
 
   return (
     <main className="screen">
@@ -197,20 +209,14 @@ function Play({ game, level, initialSeed, onRestart }: PlayProps) {
       </div>
 
       {pending && (
-        <div
-          className={`feedback ${pending.check.correct ? 'is-right' : 'is-wrong'}`}
-          role="status"
-          aria-live="polite"
-        >
-          <p className="feedback-title">
-            {pending.check.correct ? 'Correct' : `Not quite. Answer: ${pending.check.expected}`}
-          </p>
-          {showExplanation && <p>{pending.check.explanation}</p>}
-          {!pending.check.correct && pending.saved && <p>Added to your reviews.</p>}
-          <button type="button" ref={nextRef} onClick={onNext}>
-            {step + 1 >= session.questionCount ? 'See results' : 'Next'}
-          </button>
-        </div>
+        <Feedback
+          check={pending.check}
+          showExplanation={level.mode !== 'drill'}
+          note={!pending.check.correct && pending.saved ? 'Added to your reviews.' : null}
+          nextLabel={step + 1 >= session.questionCount ? 'See results' : 'Next'}
+          onNext={onNext}
+          nextRef={nextRef}
+        />
       )}
     </main>
   )

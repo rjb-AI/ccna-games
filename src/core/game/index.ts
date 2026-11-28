@@ -61,6 +61,8 @@ export interface GameLogic<P, Q, R> {
 export interface StepRecord extends Check {
   step: number
   prompt: string
+  /** Time ran out while this question was on screen, before any answer. Counts as missed. */
+  unanswered?: true
 }
 
 export interface Session {
@@ -88,10 +90,13 @@ export interface SessionResult {
   correct: number
   answered: number
   total: number
+  /** Questions with no answer because time ran out (total minus answered). */
+  unanswered: number
   timeMs: number
   timedOut: boolean
   passed: boolean
   stars: Stars
+  /** Wrong answers, plus the question on screen when time ran out. */
   missed: StepRecord[]
   /** Drill points: 100 per right answer times the streak multiplier. */
   points: number
@@ -146,6 +151,28 @@ export function endSession(s: Session, now: number): Session {
   return { ...s, endedAt: now, timedOut: left === 0 && s.steps.length < s.questionCount }
 }
 
+/**
+ * Time ran out with the question for step `currentStep(s)` on screen. An answer given but not yet
+ * confirmed (`pending`) is kept as given. With no answer, the question still counts as missed:
+ * the player saw it, so it goes to review (`toReview` is its step). Questions never shown are
+ * only counted as unanswered. A pending wrong answer was sent to review when it was given, so
+ * `toReview` is null then.
+ */
+export function timeUp(
+  s: Session,
+  now: number,
+  prompt: string,
+  pending?: Check,
+): { session: Session; toReview: number | null } {
+  if (isOver(s)) return { session: endSession(s, now), toReview: null }
+  const step = currentStep(s)
+  const record: StepRecord = pending
+    ? { ...pending, step, prompt }
+    : { correct: false, given: '', expected: '', explanation: '', step, prompt, unanswered: true }
+  const session: Session = { ...s, steps: [...s.steps, record], endedAt: now, timedOut: true }
+  return { session, toReview: pending ? null : step }
+}
+
 export function starsFor(score: number, passed: boolean): Stars {
   if (!passed) return 0
   if (score >= 100) return 3
@@ -179,7 +206,7 @@ function streakPoints(steps: readonly Check[]): { points: number; bestStreak: nu
 
 export function scoreSession(s: Session): SessionResult {
   const correct = s.steps.filter((x) => x.correct).length
-  const answered = s.steps.length
+  const answered = s.steps.filter((x) => !x.unanswered).length
   const total = s.questionCount
   const score = total === 0 ? 0 : Math.round((correct / total) * 100)
   const accuracy = answered === 0 ? 0 : Math.round((correct / answered) * 100)
@@ -193,6 +220,7 @@ export function scoreSession(s: Session): SessionResult {
     correct,
     answered,
     total,
+    unanswered: total - answered,
     timeMs: (s.endedAt ?? s.startedAt) - s.startedAt,
     timedOut: s.timedOut,
     passed,

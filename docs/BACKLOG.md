@@ -15,10 +15,6 @@ of each column.
 - **Records (Help Desk Hotline) and every "label each item" question:** options in a fixed
   order every time (muscle memory), equal-size buttons in a tidy grid. For DNS add records to
   balance the grid (e.g. TXT, NS → 6 = 2 rows of 3). (User, 28 Nov)
-- **Audit fixes: app bugs**: timed-out results say "Nothing. Well done."; Check work order drops
-  the line still typed; multi-line CLI answers collapse to one line in feedback; topology text
-  under 20px on phones; malformed `%` in the URL blanks the app (add an error boundary); CLI
-  history arrows wipe the draft; Start over leaves input and help open; `?foo` forces seed 0.
 - **Coverage and ambiguity leftovers**: ACL break-fix with only 2 lines to choose from; ETSI
   channel plans note in Airwaves; AI desk depth; NAT static inside-global collision check.
 
@@ -60,6 +56,19 @@ Reusable interaction kinds, then which games use them:
 
 ## Done
 
+- 28 Nov: **Audit fixes: app bugs** (PR "App bug fixes"):
+  - Malformed `%` in the URL no longer blanks the app (safe decode in the router), and a
+    top-level error boundary shows "Something went wrong" with Back to hub.
+  - `?foo=1` no longer forces seed 0: the router only takes `seed` when it is a whole number.
+  - Time running out: results say how many questions were not answered and never "Well done";
+    the question on screen goes to reviews (core/game `timeUp` decides, one place in the frame).
+  - Command line: Check work order includes the line still typed; history arrows keep the
+    draft; Start over clears input, history and help; chips are a labelled group and "?" has
+    a name and controls the help list.
+  - Multi-line answers keep their lines and indentation: one `Answer` component used by play
+    and review feedback (now one shared `Feedback` panel) and the results list.
+  - Topology labels are 20px at every size; layout owner `topology/layout.ts` spreads a
+    drawing until no labels cover each other, and wide drawings scroll inside their own box.
 - 28 Nov: **Audit fixes, networking and CLI** (PR below):
   - VRRP/HSRP: equal priority never preempts (RFC 5798 6.4.2).
   - Longest Match: "Dropped" explanation names the matching route; destinations are routable

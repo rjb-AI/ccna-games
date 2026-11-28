@@ -61,3 +61,40 @@ export function checkCli(q: CliQuestion, r: CliResponse): Check {
 export function describeCli(q: CliQuestion): string {
   return `${q.prompt} ${q.requirements.map(describeRequirement).join('; ')}`
 }
+
+/** The lines to judge on "Check work order": a line still typed in the input counts too. */
+export function linesToCheck(lines: readonly string[], input: string): string[] {
+  return input.trim() ? [...lines, input] : [...lines]
+}
+
+/** Where the history arrows are: `pos` in the typed lines (null: not browsing) and the draft. */
+export interface HistoryNav {
+  pos: number | null
+  /** What was in the input before browsing started; it comes back past the newest entry. */
+  draft: string
+}
+
+export const HISTORY_START: HistoryNav = { pos: null, draft: '' }
+
+/**
+ * One press of the up (-1) or down (1) arrow over the typed lines, like IOS: up from the input
+ * keeps what was typed as a draft, down with no position does nothing, and down past the newest
+ * entry restores the draft.
+ */
+export function historyMove(
+  nav: HistoryNav,
+  typed: readonly string[],
+  input: string,
+  dir: -1 | 1,
+): { nav: HistoryNav; input: string } {
+  if (!typed.length) return { nav, input }
+  if (nav.pos === null) {
+    if (dir === 1) return { nav, input }
+    const pos = typed.length - 1
+    return { nav: { pos, draft: input }, input: typed[pos] as string }
+  }
+  const pos = nav.pos + dir
+  if (pos >= typed.length) return { nav: HISTORY_START, input: nav.draft }
+  const at = Math.max(pos, 0)
+  return { nav: { ...nav, pos: at }, input: typed[at] as string }
+}
