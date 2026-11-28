@@ -10,7 +10,8 @@
  */
 import type { ChoiceQuestion } from '../../app/frame/choice'
 import type { MixedQuestion } from '../../app/frame/mixed'
-import type { OrderQuestion } from '../../app/frame/order'
+import type { WiresQuestion } from '../../app/frame/wires'
+import { T568A, T568B, WIRE } from '../../core/cabling'
 import { type Rng, stepRng } from '../../core/rng'
 
 export type DoctorKind = 'pinout' | 'cable-type' | 'fiber' | 'symptom'
@@ -18,35 +19,24 @@ export interface DoctorParams {
   kinds: readonly DoctorKind[]
 }
 
-export const T568A = [
-  'White/green',
-  'Green',
-  'White/orange',
-  'Blue',
-  'White/blue',
-  'Orange',
-  'White/brown',
-  'Brown',
-]
-export const T568B = [
-  'White/orange',
-  'Orange',
-  'White/green',
-  'Blue',
-  'White/blue',
-  'Green',
-  'White/brown',
-  'Brown',
-]
+export { T568A, T568B }
 
-function pinout(rng: Rng): OrderQuestion {
+function pinout(rng: Rng): WiresQuestion {
   const b = rng.chance(0.6)
   const answer = b ? T568B : T568A
+  const order = rng.shuffle([...answer])
   return {
-    prompt: `Wire an RJ45 plug to ${b ? 'T568B' : 'T568A'}: put the wires in order from pin 1 to pin 8.`,
-    items: rng.shuffle(answer),
-    answer,
-    explanation: `${b ? 'T568B' : 'T568A'}: ${answer.map((c, i) => `${i + 1} ${c}`).join(', ')}. T568A and T568B swap the orange and green pairs.`,
+    prompt: `Wire the plug to ${b ? 'T568B' : 'T568A'}.`,
+    connector: 'rj45',
+    targets: answer.map((_, i) => ({ id: `pin${i + 1}`, label: `Pin ${i + 1}` })),
+    sources: order.map((c) => ({
+      id: c,
+      label: WIRE[c].short,
+      colour: WIRE[c].pair,
+      striped: WIRE[c].striped,
+    })),
+    answer: Object.fromEntries(answer.map((c, i) => [`pin${i + 1}`, c])),
+    explanation: `${b ? 'T568B' : 'T568A'}: ${answer.map((c, i) => `${i + 1} ${c}`).join(', ')}. T568A and T568B swap the orange and green pairs; blue stays on 4-5 and brown on 7-8.`,
     hint: b
       ? 'B starts with orange: white/orange, orange.'
       : 'A starts with green: white/green, green.',
@@ -192,7 +182,7 @@ export function makeQuestion(params: DoctorParams, seed: number, step: number): 
   const rng = stepRng(seed, step)
   switch (rng.pick(params.kinds)) {
     case 'pinout':
-      return { kind: 'order', q: pinout(rng) }
+      return { kind: 'wires', q: pinout(rng) }
     case 'cable-type':
       return { kind: 'choice', q: cableType(rng) }
     case 'fiber':

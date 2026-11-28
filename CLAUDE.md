@@ -24,7 +24,9 @@ Target: CCNA 200-301 **v2.0** only.
    due" lives in `src/app/review/queue.ts` on top of `src/core/srs`). When fixing a bug, find
    that owner, write a test that fails, fix it there, and route every screen through it. Never
    patch the same rule separately in several screens. If logic is repeated, consolidate it.
-6. **Follow the theme rules** (below). All colours, sizes and spacing come from
+6. **Keep `docs/BACKLOG.md` current.** It is the user's Kanban view of the work: add every
+   request and audit finding to it, and move items to Done in the PR that finishes them.
+7. **Follow the theme rules** (below). All colours, sizes and spacing come from
    `src/app/theme/tokens.css`.
 
 ## Theme rules

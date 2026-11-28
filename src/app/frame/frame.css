@@ -472,52 +472,39 @@ button:disabled {
   cursor: default;
 }
 
-/* Put in order */
+/* Put in order: slots at the top, a tray of items below (OrderView). */
 .order-seq {
   list-style: none;
-  margin: 0 0 var(--space-2);
+  margin: 0 0 var(--space-1);
   padding: 0;
   display: grid;
-  gap: var(--space-1);
+  gap: 4px;
 }
 
-.order-seq li {
+.order-slot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-1);
   border: 2px dashed var(--color-border);
   border-radius: var(--radius);
   min-height: 52px;
+  padding: 0 0 0 var(--space-1);
 }
 
-.order-seq li.is-set {
+.order-slot.is-set {
   border-style: solid;
   border-color: var(--color-accent);
 }
 
-.order-seq li.is-right {
+.order-slot.is-right {
   border-style: solid;
   border-color: var(--color-good);
 }
 
-.order-seq li.is-wrong {
+.order-slot.is-wrong {
   border-style: solid;
   border-color: var(--color-bad);
-}
-
-.order-seq button,
-.order-empty {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  width: 100%;
-  min-height: 48px;
-  padding: var(--space-1) var(--space-2);
-  text-align: left;
-  color: var(--color-text);
-  background: none;
-  font-weight: 600;
-}
-
-.order-empty {
-  color: var(--color-text-muted);
 }
 
 .order-n {
@@ -528,25 +515,158 @@ button:disabled {
   color: var(--color-text-muted);
 }
 
-.order-seq .mark {
-  display: block;
-  padding: 0 var(--space-2) var(--space-1);
+.order-empty {
+  flex: 1 1 auto;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  color: var(--color-text-muted);
+}
+
+.order-slot .mark {
+  flex-basis: 100%;
+  padding: 0 var(--space-1) 4px;
   color: var(--color-bad);
   font-weight: 700;
+}
+
+button.order-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--tap-min);
+  padding: 0 var(--space-2);
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-weight: 600;
+  text-align: left;
+  touch-action: none; /* the item follows the finger while dragging */
+  user-select: none;
+}
+
+.order-slot button.order-item {
+  flex: 1 1 auto;
+  border: none;
+  background: none;
+}
+
+button.order-item.is-dragging {
+  border: 2px solid var(--color-accent);
+  background-color: var(--color-surface);
 }
 
 .order-pool {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1);
+  min-height: 56px;
+  padding: 4px;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
 }
 
-.order-pool button {
-  min-height: var(--tap-min);
-  color: var(--color-text);
-  background-color: var(--color-surface);
+.order-pool-empty {
+  align-self: center;
+  color: var(--color-text-muted);
+}
+
+/* RJ45 plug: eight pins side by side; each pin holds one wire. */
+.order-plug {
+  list-style: none;
+  margin: 0 0 var(--space-1);
+  padding: var(--space-1) var(--space-1) 0;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
   border: 2px solid var(--color-border);
-  font-weight: 600;
+  border-bottom-width: 12px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background-color: var(--color-surface);
+}
+
+.order-plug .order-slot {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  padding: 4px 0 0;
+  min-height: 150px;
+  border-radius: 4px 4px 0 0;
+}
+
+.order-plug .order-n {
+  justify-content: center;
+}
+
+.order-plug .order-empty {
+  min-height: 112px;
+}
+
+.order-plug button.order-item {
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+  padding: 0 0 4px;
+  min-height: 112px;
+}
+
+.order-plug .order-item-text {
+  font-size: var(--font-size-small);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.order-plug .mark {
+  font-size: var(--font-size-small);
+  padding: 0;
+  text-align: center;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.order-legend {
+  margin: 0 0 var(--space-1);
+  color: var(--color-text-muted);
+}
+
+/* Wires: solid for the coloured wire, white with coloured stripes for its partner. */
+.wire {
+  display: block;
+  align-self: stretch;
+  min-width: 14px;
+  min-height: 48px;
+  flex: 1 1 auto;
+  border-radius: 4px;
+  background-color: var(--wire);
+}
+
+.wire.is-striped {
+  background: repeating-linear-gradient(135deg, var(--wire-white) 0 8px, var(--wire) 8px 14px);
+}
+
+.wire-green {
+  --wire: var(--color-wire-green);
+}
+.wire-orange {
+  --wire: var(--color-wire-orange);
+}
+.wire-blue {
+  --wire: var(--color-wire-blue);
+}
+.wire-brown {
+  --wire: var(--color-wire-brown);
+}
+
+.order-pool button.order-item.is-wire {
+  flex-direction: row;
+  min-width: 80px;
+  padding: 0 var(--space-1);
+}
+
+.order-pool .wire {
+  flex: 0 0 18px;
+  min-height: 36px;
 }
 
 /* Mini command line. The terminal scrolls inside its own box; nothing is fixed or sticky. */
@@ -687,4 +807,132 @@ button.cli-chip.is-arg {
 button,
 a.btn {
   touch-action: manipulation;
+}
+
+.order-plug .wire {
+  flex: 0 0 64px;
+  min-height: 64px;
+  width: 100%;
+}
+
+/* Wire board (WireBoardView). The SVG scales to the screen width. */
+.wire-board {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto var(--space-1);
+  touch-action: none; /* drags move wires, not the page */
+  user-select: none;
+}
+
+.plug-body {
+  fill: var(--color-surface);
+  stroke: var(--color-border);
+  stroke-width: 3;
+}
+
+.plug-latch {
+  fill: var(--color-border);
+}
+
+.plug-pin {
+  fill: var(--color-bg);
+  stroke: var(--color-star);
+  stroke-width: 2;
+}
+
+.plug-pin.is-set {
+  fill: var(--color-surface);
+}
+
+.plug-pin.is-right {
+  stroke: var(--color-good);
+  stroke-width: 4;
+}
+
+.plug-pin.is-wrong {
+  stroke: var(--color-bad);
+  stroke-width: 4;
+}
+
+.pin-label {
+  fill: var(--color-text);
+  font-size: 22px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.pin-mark {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.pin-mark.is-right {
+  fill: var(--color-good);
+}
+
+.pin-mark.is-wrong {
+  fill: var(--color-bad);
+}
+
+.wire-g {
+  --wire: var(--color-text);
+}
+
+.wire-g.wire-green {
+  --wire: var(--color-wire-green);
+}
+.wire-g.wire-orange {
+  --wire: var(--color-wire-orange);
+}
+.wire-g.wire-blue {
+  --wire: var(--color-wire-blue);
+}
+.wire-g.wire-brown {
+  --wire: var(--color-wire-brown);
+}
+
+.wire-line {
+  fill: none;
+  stroke: var(--wire);
+  stroke-width: 12;
+  stroke-linecap: round;
+}
+
+/* Striped wire: white with short coloured bands over it. */
+.wire-g:has(.wire-stripe) .wire-line {
+  stroke: var(--wire-white);
+}
+
+.wire-stripe {
+  fill: none;
+  stroke: var(--wire);
+  stroke-width: 12;
+  stroke-dasharray: 8 10;
+}
+
+.wire-tip {
+  fill: var(--wire);
+  stroke: var(--color-bg);
+  stroke-width: 2;
+}
+
+.wire-handle {
+  fill: transparent;
+  cursor: grab;
+}
+
+.wire-handle:focus {
+  outline: none;
+}
+
+.wire-handle:focus-visible {
+  stroke: var(--color-focus);
+  stroke-width: 3;
+}
+
+.wire-label {
+  fill: var(--color-text);
+  font-size: 22px;
+  font-weight: 700;
 }

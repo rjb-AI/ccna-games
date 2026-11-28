@@ -1,5 +1,7 @@
 import { ChoiceView } from './ChoiceView'
 import { CliView } from './CliView'
+import { WireBoardView } from './WireBoardView'
+import type { WiresResponse } from './wires'
 import { FieldsView } from './FieldsView'
 import { LabelsView } from './LabelsView'
 import { OrderView } from './OrderView'
@@ -17,6 +19,22 @@ export function MixedView(props: QuestionViewProps<MixedQuestion, MixedResponse>
         {...rest}
         question={m.q}
         response={response !== null && isCli(response) ? response : null}
+      />
+    )
+  }
+  if (m.kind === 'wires') {
+    return (
+      <WireBoardView
+        {...rest}
+        question={m.q}
+        response={
+          response === null ||
+          typeof response === 'string' ||
+          Array.isArray(response) ||
+          isCli(response)
+            ? null
+            : (response as WiresResponse)
+        }
       />
     )
   }
