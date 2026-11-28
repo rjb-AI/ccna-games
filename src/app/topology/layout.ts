@@ -29,6 +29,9 @@ export const textPx = (text: string) => text.length * TEXT_PX * CHAR_EM
 
 const boxPx = (d: Device) => Math.max(64, textPx(d.label) + 20)
 
+/** Size in CSS px of a label badge on a port or device (a 48px tap target is drawn round it). */
+export const BADGE_PX = 40
+
 /** Height in CSS px of the ring drawn round a highlighted or blocked port. */
 export const RING_H_PX = 36
 
@@ -49,6 +52,8 @@ export interface PortMark {
   named: boolean
   /** A port drawn as a dot (its name didn't fit): tap it to read the name. */
   dot: boolean
+  /** A port that carries a label badge (labels on the diagram). */
+  badge: boolean
 }
 
 export interface LinkGeometry {
@@ -84,6 +89,11 @@ export interface TopoLayout {
   compact: boolean
   /** Link labels are left off the drawing (tap a port or switch to read them). */
   linksHidden: boolean
+}
+
+/** Where a device's label badge sits: just right of its box. */
+export function badgeAt(d: Device, u: number): Point {
+  return { x: d.x + ((boxPx(d) + BADGE_PX) / 2 + 6) * u, y: d.y }
 }
 
 /** Hotspot id for a port: "device:port". */
@@ -126,6 +136,7 @@ function place(
   const rects: Rect[] = []
   for (const d of t.devices) {
     rects.push(rectAt(d, boxPx(d), BOX_H_PX, u))
+    if (v.badgeDevices?.includes(d.id)) rects.push(rectAt(badgeAt(d, u), BADGE_PX, BADGE_PX, u))
     const note = notes[d.id]
     if (note) rects.push(rectAt({ x: d.x, y: d.y + (BOX_H_PX / 2 + 19) * u }, textPx(note), 22, u))
   }
@@ -162,8 +173,13 @@ function place(
     // A highlighted or blocked port has a ring round its name, wider and taller than the text.
     const ringed = (ep: Endpoint) =>
       !!v.highlightPorts?.some((p) => same(p, ep)) || !!v.blockedPorts?.some((p) => same(p, ep))
+    const badged = (ep: Endpoint) => !!v.badgePorts?.some((p) => same(p, ep))
     const off = (ep: Endpoint) => {
-      const [w, h] = ringed(ep) ? [textPx(ep.port) + 18, RING_H_PX] : [textPx(ep.port), 28]
+      const [w, h] = badged(ep)
+        ? [BADGE_PX + 8, BADGE_PX + 8]
+        : ringed(ep)
+          ? [textPx(ep.port) + 18, RING_H_PX]
+          : [textPx(ep.port), 28]
       return ((Math.abs(ux) * w) / 2 + (Math.abs(uy) * h) / 2 + 8) * u
     }
     // Port labels on parallel links are staggered along the link so they do not stack.
@@ -173,14 +189,19 @@ function place(
       const hot = v.highlightPorts?.some((p) => same(p, ep)) ?? false
       const onHost = device(t, ep.device).kind === 'host'
       const wanted = !!v.showPorts && !onHost
-      const named = (wanted && (!compact || !!v.focusPorts?.includes(ep.device))) || hot
+      const badge = badged(ep)
+      const named = !badge && ((wanted && (!compact || !!v.focusPorts?.includes(ep.device))) || hot)
       const blocked = v.blockedPorts?.some((p) => same(p, ep)) ?? false
-      return { ep, at, hot, blocked, named, dot: wanted && !named }
+      return { ep, at, hot, blocked, named, dot: wanted && !named && !badge, badge }
     }
     // Each port label takes the first spot along its link (stepping away from its device) that
     // nothing else covers yet, like link labels do.
     const sizeOf = (p: PortMark): [number, number] =>
-      p.hot || p.blocked ? [ringPx(p), RING_H_PX] : [textPx(p.ep.port), 22]
+      p.badge
+        ? [BADGE_PX + 8, BADGE_PX + 8]
+        : p.hot || p.blocked
+          ? [ringPx(p), RING_H_PX]
+          : [textPx(p.ep.port), 22]
     const placePort = (ep: Endpoint, d: Device, sx: number, sy: number, dir: 1 | -1) => {
       const base = dist(d, ep)
       const probe = mark(ep, { x: 0, y: 0 })
@@ -190,14 +211,15 @@ function place(
         .filter((s2) => s2 < len / 2 - (w / 2) * u * Math.abs(ux) - 4 * u || s2 === base)
         .map((s2) => ({ x: sx + dir * ux * s2, y: sy + dir * uy * s2 }))
       const free =
-        probe.named || probe.hot || probe.blocked
+        probe.named || probe.hot || probe.blocked || probe.badge
           ? spots.find((c) => !rects.some((r) => cover(r, rectAt(c, w, h, u))))
           : undefined
       return mark(ep, free ?? (spots[0] as Point))
     }
     const ports = [placePort(l.a, a, ax, ay, 1), placePort(l.b, b, bx, by, -1)]
     for (const p of ports) {
-      if (p.hot || p.blocked) rects.push(rectAt(p.at, ringPx(p), RING_H_PX, u))
+      if (p.badge) rects.push(rectAt(p.at, BADGE_PX + 8, BADGE_PX + 8, u))
+      else if (p.hot || p.blocked) rects.push(rectAt(p.at, ringPx(p), RING_H_PX, u))
       else if (p.named) rects.push(rectAt(p.at, textPx(p.ep.port), 22, u))
       if (p.blocked) rects.push(rectAt({ x: p.at.x, y: p.at.y + 30 * u }, 16, 22, u))
     }
@@ -256,7 +278,12 @@ function spans(v: TopologyVisual) {
   const ys = v.topology.devices.map((d) => d.y)
   const spanX = Math.max(...xs) - Math.min(...xs)
   const spanY = Math.max(...ys) - Math.min(...ys)
-  const maxBoxPx = Math.max(...v.topology.devices.map(boxPx))
+  // A device with a label badge needs room for the badge beside it.
+  const maxBoxPx = Math.max(
+    ...v.topology.devices.map(
+      (d) => boxPx(d) + (v.badgeDevices?.includes(d.id) ? 2 * (BADGE_PX + 6) : 0),
+    ),
+  )
   // A drawing may be up to TALLEST times taller than wide (phones are tall); tiny ones are not
   // blown up.
   return { spanX, maxBoxPx, W0: Math.max(spanX, spanY / TALLEST, 300) }

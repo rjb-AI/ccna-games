@@ -33,3 +33,20 @@ test('tapping a port dot names it under the drawing', async ({ page }) => {
   await port.click({ force: true })
   await expect(page.locator('.topo-info')).toContainText(/^SW-C Gi0\/1 to SW-/)
 })
+
+test('labels on the diagram: tap each port to mark it trusted or untrusted', async ({ page }) => {
+  await page.goto('./#/play/port-defender/trust?seed=2')
+  const badges = page.locator('.topo-badge')
+  await expect(badges.first()).toBeVisible()
+  // The test's own rule: trust only ports that lead to the real DHCP server (the uplink to the
+  // core, or the company DHCP server's port).
+  for (let i = 0; i < (await badges.count()); i++) {
+    const b = badges.nth(i)
+    const label = (await b.getAttribute('aria-label')) ?? ''
+    const trusted = / to (Core|DHCP) /.test(label)
+    await b.dispatchEvent('click') // first tap: Trusted
+    if (!trusted) await b.dispatchEvent('click') // second tap: Untrusted
+  }
+  await page.getByRole('button', { name: 'Check answer' }).click()
+  await expect(page.getByRole('status')).toContainText('Correct')
+})

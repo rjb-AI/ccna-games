@@ -9,7 +9,16 @@
  */
 import { useState } from 'react'
 import type { TopologyVisual } from '../frame/visuals'
-import { FIT_PX, type PortMark, RING_H_PX, layoutTopology, portId, ringPx } from './layout'
+import {
+  BADGE_PX,
+  FIT_PX,
+  type PortMark,
+  RING_H_PX,
+  badgeAt,
+  layoutTopology,
+  portId,
+  ringPx,
+} from './layout'
 import './topology.css'
 
 export interface TopologyPick {
@@ -22,10 +31,32 @@ export interface TopologyPick {
   onPick(id: string): void
 }
 
+/** Labels drawn on the diagram: each badge cycles through the options when tapped. */
+export interface TopologyAssign {
+  /** Hotspot id (device id or "device:port") -> the item it labels. */
+  anchors: Readonly<Record<string, string>>
+  /** Current option per item (missing = not set). */
+  values: Readonly<Record<string, string>>
+  /** Short badge text per option, e.g. "R" for Root. */
+  codes: Readonly<Record<string, string>>
+  /** After checking: right/wrong per item. */
+  marks?: Readonly<Record<string, 'right' | 'wrong'>>
+  disabled?: boolean
+  onTap(item: string): void
+}
+
 /** Half the size of a tap target, in CSS px (targets are 48px or more). */
 const HIT_PX = 24
 
-export function TopologyView({ v, pick }: { v: TopologyVisual; pick?: TopologyPick }) {
+export function TopologyView({
+  v,
+  pick,
+  assign,
+}: {
+  v: TopologyVisual
+  pick?: TopologyPick
+  assign?: TopologyAssign
+}) {
   const layout = layoutTopology(v)
   const {
     u,
@@ -60,6 +91,45 @@ export function TopologyView({ v, pick }: { v: TopologyVisual; pick?: TopologyPi
   const tap = (id: string) => {
     setInspect(id)
     if (pick && !pick.disabled && pick.options.includes(id)) pick.onPick(id)
+    const item = assign?.anchors[id]
+    if (assign && item && !assign.disabled) assign.onTap(item)
+  }
+  /** A label badge at `at` for hotspot `id`. */
+  const badge = (id: string, at: { x: number; y: number }) => {
+    const item = assign?.anchors[id]
+    if (!assign || !item) return null
+    const value = assign.values[item]
+    const mark = assign.marks?.[item]
+    const r = (BADGE_PX / 2) * u
+    return (
+      <g
+        key={`badge-${id}`}
+        className={`topo-badge${value ? ' is-set' : ''}${mark ? ` is-${mark}` : ''}`}
+        role="button"
+        tabIndex={assign.disabled ? -1 : 0}
+        aria-label={`${describe(id)}: ${value ?? 'not set'}${assign.disabled ? '' : ' (tap to change)'}`}
+        onClick={() => tap(id)}
+        onKeyDown={keyTap(id)}
+      >
+        <circle cx={at.x} cy={at.y} r={Math.max(r, HIT_PX * u)} className="topo-badge-hit" />
+        <circle cx={at.x} cy={at.y} r={r} strokeWidth={3 * u} className="topo-badge-disc" />
+        <text x={at.x} y={at.y} fontSize={font} dominantBaseline="central" textAnchor="middle">
+          {value ? (assign.codes[value] ?? value) : '?'}
+        </text>
+        {mark && (
+          <text
+            x={at.x + r * 1.2}
+            y={at.y - r * 1.1}
+            fontSize={font}
+            dominantBaseline="central"
+            textAnchor="middle"
+            className="topo-badge-mark"
+          >
+            {mark === 'right' ? '✓' : '✗'}
+          </text>
+        )}
+      </g>
+    )
   }
   const pickClass = (id: string) => {
     if (!pick?.options.includes(id)) return ''
@@ -72,12 +142,13 @@ export function TopologyView({ v, pick }: { v: TopologyVisual; pick?: TopologyPi
       tap(id)
     }
   }
-  const interactive = !!v.showPorts || !!pick || linksHidden
+  const interactive = !!v.showPorts || !!pick || linksHidden || !!assign
 
   // Port, link and note labels use the same size as device names: nothing under 20 px.
   const portMark = (mark: PortMark) => {
     const { ep, at, hot, blocked, named, dot } = mark
     const id = portId(ep)
+    if (mark.badge) return badge(id, at)
     const tappable = interactive && (named || dot || hot || blocked)
     return (
       <g
@@ -220,6 +291,9 @@ export function TopologyView({ v, pick }: { v: TopologyVisual; pick?: TopologyPi
             )
           })}
           {links.map((g) => g.ports.map(portMark))}
+          {t.devices.map((d) =>
+            v.badgeDevices?.includes(d.id) ? badge(d.id, badgeAt(d, u)) : null,
+          )}
         </svg>
       </div>
       <figcaption>{v.caption}</figcaption>

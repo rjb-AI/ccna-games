@@ -1079,3 +1079,31 @@ button.bin-card {
   color: var(--color-bad);
   font-weight: 700;
 }
+
+/* Labels on the diagram: legend of badge codes, and what was wrong after checking. */
+.badge-legend {
+  list-style: none;
+  margin: 0 0 var(--space-1);
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--space-2);
+}
+
+.badge-legend-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  border: 2px solid var(--color-accent);
+  border-radius: 50%;
+  font-weight: 700;
+}
+
+.badge-wrong {
+  margin: 0 0 var(--space-1);
+  padding-left: var(--space-2);
+  color: var(--color-bad);
+  font-weight: 700;
+}

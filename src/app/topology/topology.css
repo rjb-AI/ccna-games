@@ -223,3 +223,58 @@
 .topo-dot {
   pointer-events: none;
 }
+
+/* Label badges (labels on the diagram): a disc with a letter; tap to change it. */
+.topo-badge {
+  cursor: pointer;
+}
+
+.topo-badge-hit {
+  fill: transparent;
+}
+
+.topo-badge-disc {
+  fill: var(--color-bg);
+  stroke: var(--color-border);
+  stroke-dasharray: 6 4;
+}
+
+.topo-badge.is-set .topo-badge-disc {
+  stroke: var(--color-accent);
+  stroke-dasharray: none;
+}
+
+.topo-badge.is-right .topo-badge-disc {
+  stroke: var(--color-good);
+}
+
+.topo-badge.is-wrong .topo-badge-disc {
+  stroke: var(--color-bad);
+}
+
+.topo-badge text {
+  fill: var(--color-text);
+  font-weight: 700;
+}
+
+.topo-badge-mark {
+  paint-order: stroke;
+  stroke: var(--color-surface);
+}
+
+.topo-badge.is-right .topo-badge-mark {
+  fill: var(--color-good);
+}
+
+.topo-badge.is-wrong .topo-badge-mark {
+  fill: var(--color-bad);
+}
+
+.topo-badge:focus-visible {
+  outline: none;
+}
+
+.topo-badge:focus-visible .topo-badge-disc {
+  stroke: var(--color-focus);
+  stroke-width: 4px;
+}

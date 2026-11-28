@@ -26,7 +26,13 @@ export interface LabelsQuestion {
    * at a time, sorted into a fixed grid of equal-size bins (BinsView). Options are always shown
    * in the order given, so keep that order the same across a level.
    */
-  display?: 'list' | 'bins'
+  display?: 'list' | 'bins' | 'diagram'
+  /**
+   * For display 'diagram': which spot on the first topology visual each item is (a device id or
+   * "device:port"), and a short badge code per option ("R" for Root). Tapping a spot cycles it.
+   */
+  anchors?: Readonly<Record<string, string>>
+  codes?: Readonly<Record<string, string>>
 }
 
 export type LabelsResponse = Readonly<Record<string, string>>
