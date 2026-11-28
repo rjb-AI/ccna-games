@@ -16,13 +16,30 @@ export interface LabelsQuestion {
   answers: Readonly<Record<string, string>>
   explanation: string
   hint?: string
+  /**
+   * Grade by a rule instead of exact answers: any choice is right as long as no neighbour has
+   * the same option (for example Wi-Fi channel plans). `answers` then holds one valid example.
+   */
+  distinctNeighbors?: Readonly<Record<string, readonly string[]>>
 }
 
 export type LabelsResponse = Readonly<Record<string, string>>
 
 export function checkLabels(q: LabelsQuestion, r: LabelsResponse): Check {
+  const nb = q.distinctNeighbors
   const parts: CheckPart[] = q.items.map((it) => {
     const given = r[it.id] ?? ''
+    if (nb) {
+      const clash = (nb[it.id] ?? []).filter((n) => given !== '' && r[n] === given)
+      const label = (id: string) => q.items.find((x) => x.id === id)?.label ?? id
+      return {
+        id: it.id,
+        label: it.label,
+        given,
+        expected: clash.length ? `different from ${clash.map(label).join(', ')}` : given,
+        correct: given !== '' && q.options.includes(given) && clash.length === 0,
+      }
+    }
     const expected = q.answers[it.id] ?? ''
     return { id: it.id, label: it.label, given, expected, correct: given === expected }
   })
@@ -31,7 +48,9 @@ export function checkLabels(q: LabelsQuestion, r: LabelsResponse): Check {
   return {
     correct: parts.every((p) => p.correct),
     given: line('given'),
-    expected: line('expected'),
+    expected: nb
+      ? `No two neighbours share a value, for example ${q.items.map((i) => `${i.label}: ${q.answers[i.id]}`).join('; ')}`
+      : line('expected'),
     explanation: q.explanation,
     parts,
   }
