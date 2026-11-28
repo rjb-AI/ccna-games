@@ -45,4 +45,11 @@ describe('topology layout', () => {
     const bad = all.filter(([, v]) => layoutTopology(v).overlaps > 0).map(([where]) => where)
     expect(bad).toEqual([])
   })
+
+  it('every diagram fits a phone: no sideways scrolling (user: everything on one screen)', () => {
+    const wide = all
+      .map(([where, v]) => [where, Math.round(layoutTopology(v).naturalWidth)] as const)
+      .filter(([, w]) => w > FIT_PX + 1)
+    expect(wide).toEqual([])
+  })
 })

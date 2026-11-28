@@ -15,6 +15,11 @@ export interface TopologyVisual {
   linkLabels?: Readonly<Record<string, string>>
   /** Show port names at link ends. */
   showPorts?: boolean
+  /**
+   * Devices whose port names are always written. When all port names don't fit a phone, the
+   * other ports become dots you tap to read (layout.ts decides).
+   */
+  focusPorts?: readonly string[]
   highlightDevices?: readonly string[]
   highlightPorts?: readonly Endpoint[]
   /** Ports drawn as blocked (STP alternate). */

@@ -130,13 +130,10 @@ function singleSwitch(rng: Rng, kind: 'one-vlan' | 'vlans' | 'trunk'): Omit<Scen
   }
   const switches = { SW1: sw('SW1', randomMac(rng, used), [1, 10, 20], ports) }
   const local = hosts.filter((h) => !h.remote)
-  // Hosts in two columns either side of the switch, so links fan out without crossing.
-  const perSide = Math.ceil(local.length / 2)
-  const positions = local.map((_, i) => ({
-    x: i % 2 === 0 ? 0 : 1000,
-    y: 450 + (Math.floor(i / 2) - (perSide - 1) / 2) * 300,
-  }))
-  const devices: Device[] = [{ id: 'SW1', kind: 'switch', label: 'SW1', x: 500, y: 450 }]
+  // Two columns for a portrait phone: the switch on the left, its hosts stacked on the right.
+  const positions = local.map((_, i) => ({ x: 1000, y: i * 330 }))
+  const mid = ((local.length - 1) * 330) / 2
+  const devices: Device[] = [{ id: 'SW1', kind: 'switch', label: 'SW1', x: 0, y: mid }]
   const links: Link[] = []
   local.forEach((h, i) => {
     const p = positions[i] as { x: number; y: number }
@@ -149,7 +146,7 @@ function singleSwitch(rng: Rng, kind: 'one-vlan' | 'vlans' | 'trunk'): Omit<Scen
     })
   })
   if (kind === 'trunk') {
-    devices.push({ id: 'SW2', kind: 'switch', label: 'SW2', x: 500, y: 50 })
+    devices.push({ id: 'SW2', kind: 'switch', label: 'SW2', x: 0, y: mid - 520 })
     links.push({
       id: 'trunk',
       a: { device: 'SW1', port: 'Gi0/1' },
@@ -192,10 +189,10 @@ function twoSwitches(rng: Rng): Omit<Scenario, 'steps'> {
     SW1: sw('SW1', randomMac(rng, used), [1, 10, 20], p1),
     SW2: sw('SW2', randomMac(rng, used), [1, 10, 20], p2),
   }
-  // Stacked for portrait phones: SW1 above SW2, hosts beside their switch.
+  // Two columns for a portrait phone: switches on the left, each switch's hosts on the right.
   const devices: Device[] = [
-    { id: 'SW1', kind: 'switch', label: 'SW1', x: 500, y: 300 },
-    { id: 'SW2', kind: 'switch', label: 'SW2', x: 500, y: 1000 },
+    { id: 'SW1', kind: 'switch', label: 'SW1', x: 0, y: 260 },
+    { id: 'SW2', kind: 'switch', label: 'SW2', x: 0, y: 1040 },
   ]
   const links: Link[] = [
     {
@@ -207,14 +204,14 @@ function twoSwitches(rng: Rng): Omit<Scenario, 'steps'> {
   ]
   const spots: Record<string, [number, number][]> = {
     SW1: [
-      [0, 100],
-      [1000, 100],
-      [0, 450],
+      [1000, 0],
+      [1000, 260],
+      [1000, 520],
     ],
     SW2: [
-      [0, 850],
-      [1000, 850],
-      [1000, 1200],
+      [1000, 780],
+      [1000, 1040],
+      [1000, 1300],
     ],
   }
   const seen: Record<string, number> = { SW1: 0, SW2: 0 }

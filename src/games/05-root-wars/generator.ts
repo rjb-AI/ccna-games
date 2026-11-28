@@ -6,9 +6,11 @@ import type { ChoiceQuestion } from '../../app/frame/choice'
 import type { LabelsQuestion } from '../../app/frame/labels'
 import type { CliQuestion } from '../../app/frame/cli'
 import type { MixedQuestion } from '../../app/frame/mixed'
+import type { TapQuestion } from '../../app/frame/tap'
+import { portId } from '../../app/topology/layout'
 import { type Requirement, evaluateAll, solution } from '../../core/device/checks'
 import { newSwitch } from '../../core/device/state'
-import type { TableVisual, TopologyVisual } from '../../app/frame/visuals'
+import type { TableVisual, TopologyVisual, Visual } from '../../app/frame/visuals'
 import { type Rng, stepRng } from '../../core/rng'
 import {
   ROLE_LABELS,
@@ -203,7 +205,7 @@ function costVia(s: Scene, sw: string): { port: string; cost: number; via: strin
     })
 }
 
-function rootPortQuestion(rng: Rng, s: Scene, showCosts: boolean): ChoiceQuestion {
+function rootPortQuestion(rng: Rng, s: Scene, showCosts: boolean): ChoiceQuestion & { sw: string } {
   const candidates = s.input.bridges
     .map((b) => b.id)
     .filter((id) => id !== s.result.root && costVia(s, id).length >= 2)
@@ -216,6 +218,7 @@ function rootPortQuestion(rng: Rng, s: Scene, showCosts: boolean): ChoiceQuestio
   const answer = s.result.rootPort[sw] as string
   const lines = ports.map((p) => `${p.port}: cost ${p.cost} via ${s.names[p.via]}`).join('; ')
   return {
+    sw,
     prompt: `Which port is ${s.names[sw]}'s root port?`,
     visuals: sceneVisuals(s, showCosts, { highlightDevices: [sw] }),
     choices: ports.map((p) => p.port),
@@ -522,6 +525,47 @@ function cliQuestion(rng: Rng, s: Scene, backup: boolean, showCosts: boolean): C
   }
 }
 
+/**
+ * The same questions, answered by tapping the drawing: the root bridge is a switch to tap, the
+ * root port is a port to tap on the switch asked about. Built from the choice versions, so the
+ * random draws (and saved reviews) are unchanged.
+ */
+function rootTap(rng: Rng, s: Scene, showCosts: boolean): TapQuestion {
+  const c = rootQuestion(rng, s, showCosts)
+  const idOf = Object.fromEntries(Object.entries(s.names).map(([id, n]) => [n, id]))
+  const [diagram, ...rest] = c.visuals as [TopologyVisual, ...Visual[]]
+  return {
+    prompt: 'Tap the switch that becomes the root bridge.',
+    diagram: { ...diagram, showPorts: false },
+    visuals: rest,
+    options: s.input.bridges.map((b) => b.id),
+    answer: idOf[c.answer] as string,
+    names: s.names,
+    whyWrong: Object.fromEntries(
+      Object.entries(c.whyWrong ?? {}).map(([n, w]) => [idOf[n] as string, w]),
+    ),
+    explanation: c.explanation,
+    ...(c.hint ? { hint: c.hint } : {}),
+  }
+}
+
+function rootPortTap(rng: Rng, s: Scene, showCosts: boolean): TapQuestion {
+  const c = rootPortQuestion(rng, s, showCosts)
+  const [diagram, ...rest] = c.visuals as [TopologyVisual, ...Visual[]]
+  const id = (port: string) => portId({ device: c.sw, port })
+  return {
+    prompt: `Tap ${s.names[c.sw]}'s root port: the dot on the link it uses toward the root.`,
+    diagram,
+    visuals: rest,
+    options: c.choices.map(id),
+    answer: id(c.answer),
+    names: Object.fromEntries(c.choices.map((p) => [id(p), `${s.names[c.sw]} ${p}`])),
+    whyWrong: Object.fromEntries(Object.entries(c.whyWrong ?? {}).map(([p, w]) => [id(p), w])),
+    explanation: c.explanation,
+    ...(c.hint ? { hint: c.hint } : {}),
+  }
+}
+
 export function makeQuestion(params: RootWarsParams, seed: number, step: number): MixedQuestion {
   const rng = stepRng(seed, step)
   for (;;) {
@@ -535,9 +579,9 @@ export function makeQuestion(params: RootWarsParams, seed: number, step: number)
     const scene = buildScene(rng, kind === 'roles' ? 3 : 3, kind === 'roles' ? 5 : 6)
     switch (kind) {
       case 'root':
-        return { kind: 'choice', q: rootQuestion(rng, scene, params.showCosts) }
+        return { kind: 'tap', q: rootTap(rng, scene, params.showCosts) }
       case 'root-port':
-        return { kind: 'choice', q: rootPortQuestion(rng, scene, params.showCosts) }
+        return { kind: 'tap', q: rootPortTap(rng, scene, params.showCosts) }
       case 'roles':
         return { kind: 'labels', q: rolesQuestion(rng, scene, params.showCosts) }
       case 'reconverge': {

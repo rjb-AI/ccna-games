@@ -7,9 +7,12 @@ of each column.
 ## Doing
 
 - **Game-like mechanics, in the MECHANICS.md build order** (user: "do them in the order you
-  suggested"). Step 1 sort into bins: done. Now: step 2, tap the diagram (pick mode), together
-  with making diagrams fit the phone width. Then: assign mode, swipe deck, bit board, match pairs
-  and code tiles, packet path, grid placement.
+  suggested"). Steps 1 (bins) and 2 (tap the diagram, pick mode; every diagram fits a phone) done.
+  Now: step 3, tap the diagram assign mode (paint STP port roles, DR/BDR, snooping trust, Wi-Fi
+  channels on a floor plan, AP ports), then swipe deck, bit board, match pairs and code tiles,
+  packet path, grid placement. Before each: inspiration from `docs/INSPIRATION.md` (user: look up
+  games of each type first). Still to move onto tapping: Neighbor Detective (tap the mistake),
+  Longest Match rows, ACL/YAML bad line, router ID row.
 
 ## Next
 
@@ -53,6 +56,15 @@ Reusable interaction kinds, then which games use them:
 - **Fix the file**: Playbook Runner, tap lines to indent/outdent YAML.
 
 ## Done
+
+- 28 Nov: **Tap the diagram** (mechanics step 2) and **every diagram fits a phone**. Layout
+  stretches drawings down (phones are tall) and only then widens; ports become tap-to-read dots,
+  then link labels move into the tap line, before anything scrolls; Frame Run and Port Defender
+  redrawn in two columns. Fixed: highlighted-port rings were measured too small; stretching was
+  scaled away. Every switch and port is tappable ("SW-B Gi0/2 to SW-C Gi0/1 · 1G·4"). New tap
+  question kind: Root Wars root bridge and root port are answered on the drawing. Test: every
+  diagram in every game fits 390px. Inspiration research for all later kinds:
+  `docs/INSPIRATION.md`.
 
 - 28 Nov: **Sort into bins** (mechanics step 1): a card deck sorted into a fixed grid of
   equal-size bins (tap, drag or number keys); sorted cards listed under the bins so the bins

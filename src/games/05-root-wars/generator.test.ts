@@ -39,13 +39,17 @@ describe('Root Wars generator', () => {
     fc.assert(
       fc.property(seed, fc.nat(20), (s, st) => {
         const m = makeQuestion({ kinds: ['root'], showCosts: true }, s, st)
-        if (m.kind !== 'choice') throw new Error('choice')
-        const table = m.q.visuals?.[1]
+        if (m.kind !== 'tap') throw new Error('tap')
+        const table = m.q.visuals?.[0]
         if (table?.kind !== 'table') throw new Error('table')
         const best = [...table.rows].sort(
           (a, b) => Number(a[1]) - Number(b[1]) || (a[2] as string).localeCompare(b[2] as string),
         )[0] as readonly string[]
-        expect(m.q.answer).toBe(best[0])
+        expect(m.q.names[m.q.answer]).toBe(best[0])
+        // Every switch on the drawing is a tappable option.
+        expect([...m.q.options].sort()).toEqual(
+          m.q.diagram.topology.devices.map((d) => d.id).sort(),
+        )
       }),
       { numRuns: 500 },
     )
