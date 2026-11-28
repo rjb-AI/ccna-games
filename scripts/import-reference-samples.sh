@@ -21,7 +21,8 @@ NTC_COMMANDS=(
   cisco_ios/show_lldp_neighbors_detail cisco_ios/show_mac-address-table cisco_ios/show_vlan
   cisco_ios/show_port-security_interface_interface cisco_ios/show_logging cisco_ios/show_ip_arp
   cisco_ios/show_ipv6_neighbors cisco_ios/show_ip_dhcp_binding cisco_ios/show_ip_dhcp_snooping_binding
-  cisco_ios/show_version cisco_ios/show_snmp_community
+  cisco_ios/show_version cisco_ios/show_snmp_community cisco_ios/show_interfaces_switchport
+  cisco_ios/show_running-config_interface cisco_ios/show_power_inline
   linux/ip_address_show linux/ip_route_show linux/arp_-a
 )
 GENIE_PARSERS=(

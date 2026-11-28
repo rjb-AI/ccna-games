@@ -3,6 +3,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { DOMAINS } from './domains'
+import { runCli } from './frame/cli'
+import type { MixedQuestion } from './frame/mixed'
 import { GAMES } from './registry'
 import { TOP_LEVEL_TOPICS, isBlueprintTopic, parentTopic } from '../core/game/blueprint'
 
@@ -24,6 +26,28 @@ describe('registry', () => {
       expect(g.tagline.trim(), g.id).not.toBe('')
       expect(g.howToPlay.length, g.id).toBeGreaterThan(0)
       for (const p of g.howToPlay) expect(p.trim(), g.id).not.toBe('')
+    }
+  })
+
+  it('every command-line question: model answer types cleanly and passes', () => {
+    for (const g of GAMES) {
+      for (const l of g.levels) {
+        for (let step = 0; step < l.questionCount; step++) {
+          const m = g.makeQuestion(l, 4242, step) as MixedQuestion
+          if (m.kind !== 'cli') continue
+          const run = runCli(m.q, m.q.solution)
+          for (const e of run.transcript) {
+            const where = `${g.id}/${l.id} "${e.input}"`
+            // "% Access VLAN does not exist" is IOS creating a VLAN: not an error.
+            expect(
+              e.output.filter((o) => /^% (?!Access VLAN)/.test(o)),
+              where,
+            ).toEqual([])
+            expect(e.notes, where).toEqual([])
+          }
+          expect(run.evaluation.problems, `${g.id}/${l.id}`).toEqual([])
+        }
+      }
     }
   })
 

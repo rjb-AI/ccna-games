@@ -57,4 +57,22 @@ export const LEVELS: readonly LevelDef<MatchParams>[] = [
     questionCount: 5,
     topics: ['v2-3.1', 'v2-3.2'],
   },
+  {
+    id: 'build-routes',
+    title: 'Learn: write static routes',
+    mode: 'learn',
+    generatorParams: { kinds: ['cli-static', 'cli-host', 'cli-ipv6'] },
+    passScore: 60,
+    questionCount: 4,
+    topics: ['v2-3.2'],
+  },
+  {
+    id: 'build-floating',
+    title: 'Learn: build a floating backup route',
+    mode: 'learn',
+    generatorParams: { kinds: ['cli-floating'] },
+    passScore: 60,
+    questionCount: 3,
+    topics: ['v2-3.2'],
+  },
 ]

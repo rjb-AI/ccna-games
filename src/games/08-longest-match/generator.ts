@@ -7,6 +7,8 @@
 import type { ChoiceQuestion } from '../../app/frame/choice'
 import type { FieldsQuestion } from '../../app/frame/fields'
 import type { MixedQuestion } from '../../app/frame/mixed'
+import { type CliRouteKind, cliRouteQuestion } from './cli'
+
 import type { TableVisual } from '../../app/frame/visuals'
 import { type IPv4, formatIPv4, networkOf, prefixToMask } from '../../core/netmath'
 import { type Rng, stepRng } from '../../core/rng'
@@ -21,7 +23,8 @@ import {
   lookup,
 } from '../../core/sim/l3'
 
-export type MatchKind = 'pick-route' | 'installed' | 'ad' | 'static-cmd' | 'floating' | 'breakfix'
+export type MatchKind =
+  'pick-route' | 'installed' | 'ad' | 'static-cmd' | 'floating' | 'breakfix' | CliRouteKind
 export interface MatchParams {
   kinds: readonly MatchKind[]
 }
@@ -399,7 +402,8 @@ function breakfixQuestion(rng: Rng): ChoiceQuestion {
 
 export function makeQuestion(params: MatchParams, seed: number, step: number): MixedQuestion {
   const rng = stepRng(seed, step)
-  switch (rng.pick(params.kinds)) {
+  const kind = rng.pick(params.kinds)
+  switch (kind) {
     case 'pick-route':
       return { kind: 'choice', q: pickRoute(rng) }
     case 'installed':
@@ -412,5 +416,10 @@ export function makeQuestion(params: MatchParams, seed: number, step: number): M
       return { kind: 'choice', q: floatingQuestion(rng) }
     case 'breakfix':
       return { kind: 'choice', q: breakfixQuestion(rng) }
+    case 'cli-static':
+    case 'cli-host':
+    case 'cli-floating':
+    case 'cli-ipv6':
+      return { kind: 'cli', q: cliRouteQuestion(rng, kind) }
   }
 }

@@ -50,4 +50,13 @@ export const LEVELS: readonly LevelDef<RootWarsParams>[] = [
     questionCount: 6,
     topics: T,
   },
+  {
+    id: 'cli-root',
+    title: 'Learn: take the root with the command line',
+    mode: 'learn',
+    generatorParams: { kinds: ['cli-root', 'cli-root', 'cli-backup'], showCosts: true },
+    passScore: 60,
+    questionCount: 4,
+    topics: T,
+  },
 ]

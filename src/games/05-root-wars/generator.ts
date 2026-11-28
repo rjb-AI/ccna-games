@@ -4,7 +4,10 @@
  */
 import type { ChoiceQuestion } from '../../app/frame/choice'
 import type { LabelsQuestion } from '../../app/frame/labels'
+import type { CliQuestion } from '../../app/frame/cli'
 import type { MixedQuestion } from '../../app/frame/mixed'
+import { type Requirement, evaluateAll, solution } from '../../core/device/checks'
+import { newSwitch } from '../../core/device/state'
 import type { TableVisual, TopologyVisual } from '../../app/frame/visuals'
 import { type Rng, stepRng } from '../../core/rng'
 import {
@@ -19,11 +22,13 @@ import {
   key,
   linkCost,
   roleChanges,
+  rootWithout,
 } from '../../core/sim/l2'
 import { circleLayout } from '../../core/topology'
 import type { Topology } from '../../core/topology'
 
-export type RootWarsKind = 'root' | 'root-port' | 'roles' | 'reconverge' | 'guards'
+export type RootWarsKind =
+  'root' | 'root-port' | 'roles' | 'reconverge' | 'guards' | 'cli-root' | 'cli-backup'
 
 export type RootWarsParams = {
   kinds: readonly RootWarsKind[]
@@ -442,11 +447,91 @@ function guardQuestion(rng: Rng): ChoiceQuestion {
   }
 }
 
+const CLI_COMMANDS = [
+  'exec.enable',
+  'exec.configure',
+  'mode.exit',
+  'mode.end',
+  'config.do',
+  'config.stp-priority',
+  'config.stp-root',
+]
+
+/**
+ * Command-line round: the player is on one switch and must make it the root (or the backup root)
+ * for the VLAN. Judged by core/device/checks, which reruns electStp with the switch's new priority.
+ */
+function cliQuestion(rng: Rng, s: Scene, backup: boolean, showCosts: boolean): CliQuestion | null {
+  const vlan = s.input.vlan
+  const root = s.result.root
+  const rootBridge = s.input.bridges.find((b) => b.id === root) as StpInput['bridges'][number]
+  const others = s.input.bridges.filter((b) => b.id !== root)
+  let req: Requirement
+  let self: string
+  if (backup) {
+    // "root secondary" (28672) is the clean answer when the root was lowered below it and every
+    // other switch is at the default 32768.
+    if (rootBridge.priority > 24576 || others.some((b) => b.priority !== 32768)) return null
+    self = rng.pick(others).id
+    // Losing the root must leave one connected network, or "takes over" means nothing.
+    if (rootWithout(s.input, root) === null) return null
+    req = { kind: 'stp-backup', input: s.input, self, primary: root, names: s.names }
+  } else {
+    // Root priority 0 can't be beaten by priority alone; skip those.
+    if (rootBridge.priority === 0) return null
+    self = rng.pick(others).id
+    req = { kind: 'stp-root', input: s.input, self, names: s.names }
+  }
+  const bridge = s.input.bridges.find((b) => b.id === self) as StpInput['bridges'][number]
+  const ports = s.input.links.flatMap((l) =>
+    l.a.device === self ? [l.a.port] : l.b.device === self ? [l.b.port] : [],
+  )
+  const state = newSwitch({
+    hostname: s.names[self] as string,
+    mac: bridge.mac,
+    ports: ports.map((p) => p.replace(/^Gi/, 'GigabitEthernet')),
+    vlans: vlan === 1 ? {} : { [vlan]: `VLAN${String(vlan).padStart(4, '0')}` },
+  })
+  if (bridge.priority !== 32768) state.stpPriority[vlan] = bridge.priority
+  for (const l of s.input.links) {
+    const mine = l.a.device === self ? l.a : l.b.device === self ? l.b : null
+    const far = l.a.device === self ? l.b : l.a
+    if (mine) {
+      state.peers[mine.port.replace(/^Gi/, 'GigabitEthernet')] = {
+        kind: 'switch',
+        label: `${s.names[far.device]} ${far.port}`,
+        mode: 'trunk',
+      }
+    }
+  }
+  if (evaluateAll(state, [req]).met) return null
+  return {
+    prompt: backup
+      ? `You are on ${s.names[self]}. ${s.names[root]} is the root for VLAN ${vlan}. Make ${s.names[self]} the backup: it must take over if ${s.names[root]} fails, but not before.`
+      : `You are on ${s.names[self]}. Make it the root bridge for VLAN ${vlan}.`,
+    visuals: sceneVisuals(s, showCosts),
+    start: state,
+    startMode: 'exec',
+    allowed: CLI_COMMANDS,
+    requirements: [req],
+    network: { rootPriority: { [vlan]: rootBridge.priority }, rootIsSelf: [] },
+    solution: solution([req]),
+    explanation: backup
+      ? `"spanning-tree vlan ${vlan} root secondary" sets priority 28672: lower than the default 32768, higher than the root's ${rootBridge.priority}.`
+      : `A lower priority than every other switch wins the root election. "spanning-tree vlan ${vlan} root primary" works it out for you; "priority N" sets it directly (a multiple of 4096).`,
+  }
+}
+
 export function makeQuestion(params: RootWarsParams, seed: number, step: number): MixedQuestion {
   const rng = stepRng(seed, step)
   for (;;) {
     const kind = rng.pick(params.kinds)
     if (kind === 'guards') return { kind: 'choice', q: guardQuestion(rng) }
+    if (kind === 'cli-root' || kind === 'cli-backup') {
+      const q = cliQuestion(rng, buildScene(rng, 3, 5), kind === 'cli-backup', params.showCosts)
+      if (q) return { kind: 'cli', q }
+      continue
+    }
     const scene = buildScene(rng, kind === 'roles' ? 3 : 3, kind === 'roles' ? 5 : 6)
     switch (kind) {
       case 'root':

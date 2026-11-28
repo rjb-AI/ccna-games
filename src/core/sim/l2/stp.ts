@@ -250,3 +250,32 @@ export const TIEBREAK_TEXT: Record<TieBreak, string> = {
   'local-port-id': 'everything else ties, so the lower local port ID wins',
   'port-id': 'costs and bridge IDs tie, so the lower port ID wins',
 }
+
+/**
+ * The root for the VLAN if bridge `failed` goes down (it and its links removed), or null if
+ * losing it splits the network.
+ */
+export function rootWithout(input: StpInput, failed: string): string | null {
+  const rest: StpInput = {
+    ...input,
+    bridges: input.bridges.filter((b) => b.id !== failed),
+    links: input.links.filter((l) => l.a.device !== failed && l.b.device !== failed),
+  }
+  // Connected? Walk the links from any bridge.
+  const first = rest.bridges[0]
+  if (!first) return null
+  const seen = new Set([first.id])
+  for (let grew = true; grew;) {
+    grew = false
+    for (const l of rest.links) {
+      const [a, b] = [l.a.device, l.b.device]
+      if (seen.has(a) !== seen.has(b)) {
+        seen.add(a)
+        seen.add(b)
+        grew = true
+      }
+    }
+  }
+  if (seen.size !== rest.bridges.length) return null
+  return electStp(rest).root
+}
