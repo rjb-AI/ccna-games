@@ -1602,3 +1602,134 @@ button.port-card.is-wrong {
     animation: none;
   }
 }
+
+/* Grid placement (PlaceView): a board of cells, pieces spanning cells, a tray, a size stepper. */
+.place-board {
+  margin: 0 0 var(--space-2);
+}
+
+.place-board figcaption {
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.place-grid {
+  display: grid;
+  grid-auto-rows: minmax(var(--tap-min), auto);
+  gap: 4px;
+}
+
+.place-row {
+  align-self: center;
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+}
+
+.place-cell,
+.place-piece {
+  min-height: var(--tap-min);
+  min-width: 0;
+  padding: 2px 4px;
+  font-family: var(--font-mono);
+  border-radius: var(--radius);
+}
+
+.place-cell {
+  color: var(--color-text-muted);
+  background-color: var(--color-bg);
+  border: 2px solid var(--color-border);
+}
+
+.place-cell:disabled {
+  cursor: default;
+}
+
+/* A legal spot for the piece in hand: dashed, in the focus colour, with a + sign. */
+.place-cell.is-anchor {
+  color: var(--color-text);
+  border: 2px dashed var(--color-focus);
+  cursor: pointer;
+}
+
+.place-cell.is-anchor::before {
+  content: '+ ';
+}
+
+.place-piece {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 3px solid var(--tone);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.place-piece-at {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.place-piece.is-right {
+  border-color: var(--color-good);
+  background-color: var(--color-good-bg);
+}
+
+.place-piece.is-wrong {
+  border-color: var(--color-bad);
+  border-style: dashed;
+  background-color: var(--color-bad-bg);
+}
+
+/* Piece colours: always with the name as well, never colour alone. */
+.tone-0 {
+  --tone: var(--color-wire-green);
+}
+
+.tone-1 {
+  --tone: var(--color-wire-orange);
+}
+
+.tone-2 {
+  --tone: var(--color-wire-blue);
+}
+
+.tone-3 {
+  --tone: var(--color-wire-brown);
+}
+
+.place-tray {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+button.place-chip {
+  min-height: var(--tap-min);
+  padding: 0 4px;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 3px solid var(--tone);
+  border-radius: var(--radius);
+}
+
+button.place-chip.is-held {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.place-size {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.place-size p {
+  margin: 0;
+  text-align: center;
+}

@@ -138,7 +138,8 @@ tests/e2e/                 ← Playwright tests
   `WireBoardView` (drag wires onto connectors), `TapView` (answer by
   tapping a switch or port on a topology; `after` shows what happens next, `afterFor` what
   happens for the spot you picked, such as a test volley; flows can `fade` past a hop or end
-  `dropped`), `CliView` (the command line). Mix them in one game
+  `dropped`), `PlaceView` (grid placement: pieces in sizes onto a board of cells at legal
+  starts only, e.g. VLSM subnets), `CliView` (the command line). Mix them in one game
   with `MixedView`. Diagrams must fit a 390px phone (layout.ts decides; `layout.test.ts`
   enforces it): ports become tap-to-read dots before anything scrolls sideways. Any question can show `visuals`: topology
   diagrams (`src/app/topology`), tables, and numbered configuration lines. Build new kinds and

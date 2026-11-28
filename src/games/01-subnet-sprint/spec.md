@@ -65,3 +65,18 @@ per property.
 | `bits-rush`  | Drill | Numbers to build; the board checks itself the moment it matches       | 70%  | 120 s |
 
 Targets come from core `prefixToMask`, `prefixToWildcard`; mask rules from core `maskIssue`.
+
+## VLSM packing levels (mechanics step 8 part 1)
+
+| Level            | Mode  | What's generated                                            | Pass | Time |
+| ---------------- | ----- | ----------------------------------------------------------- | ---- | ---- |
+| `vlsm-pack`      | Learn | 2-3 teams in a /24 on a 16-cell board: size each, place it  | 60%  | –    |
+| `vlsm-pack-more` | Learn | 3-4 teams in a /23 or /24 (row labels show the third octet) | 60%  | –    |
+
+Each team needs a distinct size from half the block down to 1/16 (one cell). The player picks
+the size (Bigger / Smaller; the note says how many hosts that size holds and how many don't
+fit), then taps one of the dashed spots: only aligned starts are offered (core
+`alignedSubnets`), so alignment is enforced by the board. Right = every team placed in the
+smallest size that fits (core `prefixForHosts`); any legal layout counts. The model answer is core
+`vlsm` (biggest first from the start); core `vlsmPlanIssues` is the rule check. Tests re-derive
+sizes, legal starts and notes by hand arithmetic.

@@ -7,10 +7,10 @@ of each column.
 ## Doing
 
 - **Game-like mechanics, in the MECHANICS.md build order** (user: "do them in the order you
-  suggested"). Steps 1-6 done (bins, tap the diagram, labels on the diagram, swipe deck, bit
-  board, match pairs and code tiles). Now: step 7, packet path (done: be the switch, the passport
-  journey, what-happens-next replays for STP and FHRP, ACL place it and test it); next: step 8,
-  grid placement (VLSM packing, AP placement, Blueprint racks). Still to
+  suggested"). Steps 1-7 done (bins, tap the diagram, labels on the diagram, swipe deck, bit
+  board, match pairs and code tiles, packet path). Now: step 8, grid placement (part 1 done:
+  VLSM packing; next: part 2, AP placement in Airwaves, then Blueprint racks, then Port Defender
+  lane defence). Still to
   move onto the diagram: Airwaves channels (needs a floor-plan visual), AP ports. Before each: inspiration from `docs/INSPIRATION.md` (user: look up
   games of each type first). Still to move onto tapping: Neighbor Detective (tap the mistake),
   Longest Match rows, ACL/YAML bad line, router ID row.
@@ -65,6 +65,13 @@ Reusable interaction kinds, then which games use them:
 
 ## Done
 
+- 28 Nov: **Grid placement, part 1: VLSM packing** (mechanics step 8). New question kind
+  `place` (`PlaceView`): pieces in sizes go onto a board of cells, only at legal starts, never
+  overlapping; any legal layout with the right sizes is right. Subnet Sprint `vlsm-pack` (2-3
+  teams in a /24) and `vlsm-pack-more` (3-4 teams, /23 or /24): pick each team's size (the note
+  says how many hosts fit) and tap a dashed spot; aligned starts come from core `alignedSubnets`,
+  the model answer from `vlsm`, and a new core rule check `vlsmPlanIssues` (too small, too big,
+  misaligned, outside, overlap). Fits one phone screen. All 5,976 existing questions unchanged.
 - 28 Nov: **Packet path, part 4: ACL place it and test it** (mechanics step 7 done). ACL
   Bouncer `place-test`: tap the interface for a named ACL, then a test volley of three packets
   runs against your placement, with drops drawn red where they stop and a results table (tap

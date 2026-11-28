@@ -6,6 +6,7 @@ import type { ChoiceQuestion } from '../../app/frame/choice'
 import type { Field, FieldsQuestion } from '../../app/frame/fields'
 import type { BitsQuestion } from '../../app/frame/bits'
 import type { MixedQuestion } from '../../app/frame/mixed'
+import type { PlacePiece, PlaceQuestion } from '../../app/frame/place'
 import {
   HOST_ISSUE_LABELS,
   PLACE_VALUES,
@@ -13,6 +14,7 @@ import {
   type HostSettings,
   type IPv4,
   type LanSettings,
+  alignedSubnets,
   blockSize,
   broadcastOf,
   classifyIPv4,
@@ -40,6 +42,8 @@ export type SprintParams =
   | { kind: 'subnet'; minPrefix: number; maxPrefix: number }
   | { kind: 'how-many' }
   | { kind: 'vlsm' }
+  /** VLSM packing on a board of 16 cells: size each team's subnet, then place it. */
+  | { kind: 'vlsm-pack'; teams: readonly number[]; blockPrefixes: readonly number[] }
   | { kind: 'breakfix' }
   /** Bit board: 'octet' builds a decimal 0-255 in binary; 'mask' builds a mask or wildcard. */
   | { kind: 'bits'; board: 'octet' | 'mask'; maxValue?: number }
@@ -291,6 +295,95 @@ function vlsmQuestion(rng: Rng): FieldsQuestion {
   }
 }
 
+// ---------- VLSM packing: size each piece, then place it on the block ----------
+
+/** Short names, so a one-cell piece still fits its name on a phone. */
+const SHORT_TEAMS = ['Sales', 'HR', 'Lab', 'Ops', 'Dev', 'Admin', 'Guest']
+/** The board is always 16 cells, so each cell is the block size / 16 (4 prefix bits). */
+const PACK_CELL_BITS = 4
+
+function vlsmPackQuestion(rng: Rng, teamCount: number, blockPrefix: number): PlaceQuestion {
+  const network = randomPrivateNetwork(rng, blockPrefix)
+  const block = { network, prefix: blockPrefix }
+  const cellPrefix = blockPrefix + PACK_CELL_BITS
+  const cellSize = blockSize(cellPrefix)
+  const sizes = Array.from({ length: PACK_CELL_BITS }, (_, i) => blockPrefix + 1 + i)
+  // Distinct sizes (biggest is half the block), so they always fit with room to spare.
+  const prefixes = rng.shuffle(sizes).slice(0, teamCount)
+  const names = rng.shuffle(SHORT_TEAMS).slice(0, teamCount)
+  const requests = names.map((name, i) => {
+    const p = prefixes[i] as number
+    // Host count that needs exactly /p: more than /p+1 holds, at most what /p holds.
+    return { name, hosts: rng.int(usableHosts(p + 1) + 1, usableHosts(p)) }
+  })
+  const model = vlsm(block, requests)
+  if (!model) throw new Error('VLSM packing made requests that do not fit')
+  const cell = (net: IPv4) => (net - network) / cellSize
+  // Cells show the last octet (".64"); a block bigger than /24 labels each row's third octet.
+  const cells = Array.from(
+    { length: 16 },
+    (_, i) => `.${octets((network + i * cellSize) >>> 0)[3]}`,
+  )
+  const rowLabels =
+    blockPrefix < 24
+      ? Array.from({ length: 4 }, (_, r) => String(octets((network + r * 4 * cellSize) >>> 0)[2]))
+      : undefined
+  const pieces: PlacePiece[] = requests.map((r) => ({
+    id: r.name,
+    label: r.name,
+    detail: `${r.hosts} hosts`,
+    variants: sizes.map((p) => {
+      const room = usableHosts(p)
+      return {
+        id: `${r.name}:${p}`,
+        label: `/${p}`,
+        size: blockSize(p) / cellSize,
+        note:
+          room >= r.hosts ? `${room} hosts: fits` : `${room} hosts: ${r.hosts - room} don't fit`,
+      }
+    }),
+  }))
+  const anchors: Record<string, number[]> = {}
+  const whyWrong: Record<string, string> = {}
+  for (const r of requests) {
+    const need = prefixForHosts(r.hosts) as number
+    for (const p of sizes) {
+      anchors[`${r.name}:${p}`] = alignedSubnets(block, p).map(cell)
+      if (p !== need)
+        whyWrong[`${r.name}:${p}`] =
+          usableHosts(p) < r.hosts
+            ? `/${p} holds ${usableHosts(p)} hosts; ${r.name} needs ${r.hosts}.`
+            : `/${p} for ${r.name} wastes addresses: /${need} (${usableHosts(need)} hosts) is the smallest that fits ${r.hosts}.`
+    }
+  }
+  return {
+    prompt: 'Give each team the smallest subnet that fits, and place it.',
+    board: {
+      caption: `${fmt(network)}/${blockPrefix}, cells of ${cellSize}`,
+      cols: 4,
+      cells,
+      ...(rowLabels ? { rowLabels } : {}),
+    },
+    pieces,
+    anchors,
+    answer: Object.fromEntries(
+      requests.map((r) => [r.name, `${r.name}:${prefixForHosts(r.hosts)}`]),
+    ),
+    model: Object.fromEntries(
+      model.map((a) => [a.name, `${a.name}:${a.prefix}@${cell(a.network)}`]),
+    ),
+    whyWrong,
+    explanation: `Smallest that fits: ${model
+      .map((a) => `${a.name} ${a.hosts} → /${a.prefix} (${usableHosts(a.prefix)} hosts)`)
+      .join(
+        ', ',
+      )}. A subnet starts on a multiple of its own size, which is why the board only offers those spots. Biggest first from the start of the block keeps the free space in one piece: ${model
+      .map((a) => `${a.name} ${fmt(a.network)}/${a.prefix}`)
+      .join(', ')}.`,
+    hint: 'Usable hosts = 2^(host bits) − 2. A /26 holds 62, a /27 30, a /28 14.',
+  }
+}
+
 // ---------- Break-Fix ----------
 
 const FAULTS = [
@@ -423,6 +516,11 @@ export function makeQuestion(params: SprintParams, seed: number, step: number): 
       return { kind: 'bits', q: bitsQuestion(rng, params.board, params.maxValue) }
     case 'vlsm':
       return { kind: 'fields', q: vlsmQuestion(rng) }
+    case 'vlsm-pack':
+      return {
+        kind: 'place',
+        q: vlsmPackQuestion(rng, rng.pick(params.teams), rng.pick(params.blockPrefixes)),
+      }
     case 'breakfix':
       return { kind: 'choice', q: breakfixQuestion(rng) }
   }

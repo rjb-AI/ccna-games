@@ -3,6 +3,8 @@ import { BitsView } from './BitsView'
 import { ChoiceView } from './ChoiceView'
 import { DiagramLabelsView } from './DiagramLabelsView'
 import { PairsView } from './PairsView'
+import { PlaceView } from './PlaceView'
+import type { PlaceResponse } from './place'
 import { SwipeView } from './SwipeView'
 import { CliView } from './CliView'
 import { TapView } from './TapView'
@@ -83,6 +85,22 @@ export function MixedView(props: QuestionViewProps<MixedQuestion, MixedResponse>
           isCli(response)
             ? null
             : (response as WiresResponse)
+        }
+      />
+    )
+  }
+  if (m.kind === 'place') {
+    return (
+      <PlaceView
+        {...rest}
+        question={m.q}
+        response={
+          response === null ||
+          typeof response === 'string' ||
+          Array.isArray(response) ||
+          isCli(response)
+            ? null
+            : (response as PlaceResponse)
         }
       />
     )
