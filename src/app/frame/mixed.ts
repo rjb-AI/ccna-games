@@ -8,6 +8,7 @@ import { type CliQuestion, type CliResponse, checkCli, describeCli } from './cli
 import { type FieldsQuestion, type FieldsResponse, checkFields, describeFields } from './fields'
 import { type LabelsQuestion, type LabelsResponse, checkLabels, describeLabels } from './labels'
 import { type OrderQuestion, type OrderResponse, checkOrder, describeOrder } from './order'
+import { type BitsQuestion, checkBits, describeBits } from './bits'
 import { type TapQuestion, checkTap, describeTap } from './tap'
 import { type WiresQuestion, type WiresResponse, checkWires, describeWires } from './wires'
 
@@ -19,9 +20,10 @@ export type MixedQuestion =
   | { kind: 'cli'; q: CliQuestion }
   | { kind: 'wires'; q: WiresQuestion }
   | { kind: 'tap'; q: TapQuestion }
+  | { kind: 'bits'; q: BitsQuestion }
 
 export type MixedResponse =
-  string | FieldsResponse | LabelsResponse | OrderResponse | CliResponse | WiresResponse
+  number | string | FieldsResponse | LabelsResponse | OrderResponse | CliResponse | WiresResponse
 
 export const isCli = (r: MixedResponse): r is CliResponse =>
   typeof r === 'object' && !Array.isArray(r) && Array.isArray((r as CliResponse).lines)
@@ -46,6 +48,8 @@ export function checkMixed(m: MixedQuestion, r: MixedResponse): Check {
       return checkCli(m.q, isCli(r) ? r : { lines: [] })
     case 'tap':
       return checkTap(m.q, typeof r === 'string' ? r : '')
+    case 'bits':
+      return checkBits(m.q, typeof r === 'number' ? r : -1)
     case 'wires':
       return checkWires(
         m.q,
@@ -70,6 +74,8 @@ export function describeMixed(m: MixedQuestion): string {
       return describeWires(m.q)
     case 'tap':
       return describeTap(m.q)
+    case 'bits':
+      return describeBits(m.q)
   }
 }
 
@@ -85,6 +91,8 @@ export function rightResponse(m: MixedQuestion): MixedResponse {
       return m.q.answers
     case 'wires':
       return m.q.answer
+    case 'bits':
+      return m.q.target
     case 'cli':
       return { lines: m.q.solution }
   }

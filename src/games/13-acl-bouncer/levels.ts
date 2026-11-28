@@ -32,6 +32,15 @@ export const LEVELS: readonly LevelDef<BouncerParams>[] = [
     topics: T,
   },
   {
+    id: 'wildcard-bits',
+    title: 'Learn: build the wildcard',
+    mode: 'learn',
+    generatorParams: { kinds: ['wildcard-bits'] },
+    passScore: 60,
+    questionCount: 5,
+    topics: T,
+  },
+  {
     id: 'door-rush',
     title: 'Drill: busy night at the door',
     mode: 'drill',

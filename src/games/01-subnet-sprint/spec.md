@@ -55,3 +55,13 @@ the PC's and LAN's real values.
 match independent arithmetic; prefix ranges per level; VLSM aligned, packed, smallest, distinct;
 Break-Fix has exactly one fault and it is a choice. `core/netmath/*.test.ts`: 10,000 random cases
 per property.
+
+## Bit board levels
+
+| Level        | Mode  | What's generated                                                      | Pass | Time  |
+| ------------ | ----- | --------------------------------------------------------------------- | ---- | ----- |
+| `bits-octet` | Learn | A number 1-255 to build on one octet of bits                          | 60%  | –     |
+| `bits-mask`  | Learn | /8-/30: build the subnet mask (rule check names gaps) or the wildcard | 60%  | –     |
+| `bits-rush`  | Drill | Numbers to build; the board checks itself the moment it matches       | 70%  | 120 s |
+
+Targets come from core `prefixToMask`, `prefixToWildcard`; mask rules from core `maskIssue`.

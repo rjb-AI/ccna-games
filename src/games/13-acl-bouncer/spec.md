@@ -47,3 +47,11 @@ the wrong ACL mishandles.
 ## Tests
 
 `generator.test.ts`; `core/sim/services/acl.test.ts` (first-match property over random ACLs).
+
+## Door and bit board levels (mechanics steps 4-5)
+
+- `door-standard`, `door-extended` (Learn) and `door-rush` (Drill): a queue of 5 packets against
+  one ACL, swiped deny or permit; verdicts from core `evaluateAcl`. Learn shows a reason card
+  after each packet and highlights the line that decided.
+- `wildcard-bits` (Learn): build the wildcard that matches a given range on the bit board; target
+  from core `prefixToWildcard`.

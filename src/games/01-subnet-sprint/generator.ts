@@ -4,9 +4,11 @@
  */
 import type { ChoiceQuestion } from '../../app/frame/choice'
 import type { Field, FieldsQuestion } from '../../app/frame/fields'
+import type { BitsQuestion } from '../../app/frame/bits'
 import type { MixedQuestion } from '../../app/frame/mixed'
 import {
   HOST_ISSUE_LABELS,
+  PLACE_VALUES,
   type HostIssue,
   type HostSettings,
   type IPv4,
@@ -28,6 +30,7 @@ import {
   prefixToWildcard,
   subnetCount,
   subnetInfo,
+  toBits,
   usableHosts,
   vlsm,
 } from '../../core/netmath'
@@ -38,6 +41,8 @@ export type SprintParams =
   | { kind: 'how-many' }
   | { kind: 'vlsm' }
   | { kind: 'breakfix' }
+  /** Bit board: 'octet' builds a decimal 0-255 in binary; 'mask' builds a mask or wildcard. */
+  | { kind: 'bits'; board: 'octet' | 'mask'; maxValue?: number }
 
 const ip = (s: string) => parseIPv4(s) as IPv4
 const fmt = formatIPv4
@@ -369,6 +374,44 @@ function breakfixQuestion(rng: Rng): ChoiceQuestion {
   }
 }
 
+/**
+ * Bit-board rounds. Targets come from core netmath (prefixToMask, prefixToWildcard); the board
+ * checks the value built, not the taps.
+ */
+function bitsQuestion(rng: Rng, board: 'octet' | 'mask', maxValue = 255): BitsQuestion {
+  if (board === 'octet') {
+    const n = rng.int(1, maxValue)
+    return {
+      prompt: `Set the bits to make ${n}.`,
+      octets: 1,
+      target: n,
+      valueName: 'Value',
+      explanation: `${n} = ${PLACE_VALUES.filter((_, i) => toBits(n, 8)[i])
+        .map(String)
+        .join(' + ')}. Work from the left: take each place value that still fits.`,
+      hint: 'Start with 128: does it fit? Then 64, 32 ... add up what you take.',
+    }
+  }
+  const p = rng.int(8, 30)
+  const wildcard = rng.chance(0.35)
+  const target = wildcard ? prefixToWildcard(p) : prefixToMask(p)
+  return {
+    prompt: wildcard
+      ? `Build the wildcard mask for /${p} (the inverse of its subnet mask).`
+      : `Build the subnet mask for /${p}.`,
+    octets: 4,
+    target,
+    ...(wildcard ? {} : { rule: 'mask' as const }),
+    valueName: wildcard ? 'Wildcard' : 'Mask',
+    explanation: wildcard
+      ? `/${p} has ${p} network bits. The wildcard is the opposite of the mask: 0s for the ${p} network bits, 1s for the ${32 - p} host bits = ${formatIPv4(target)}.`
+      : `/${p} means the first ${p} bits are 1 and the other ${32 - p} are 0 = ${formatIPv4(target)}.`,
+    hint: wildcard
+      ? `Network bits are 0, host bits are 1: the first ${p} bits stay 0.`
+      : `Turn on the first ${p} bits, left to right.`,
+  }
+}
+
 export function makeQuestion(params: SprintParams, seed: number, step: number): MixedQuestion {
   const rng = stepRng(seed, step)
   switch (params.kind) {
@@ -376,6 +419,8 @@ export function makeQuestion(params: SprintParams, seed: number, step: number): 
       return { kind: 'fields', q: subnetQuestion(rng, params.minPrefix, params.maxPrefix) }
     case 'how-many':
       return { kind: 'fields', q: howManyQuestion(rng) }
+    case 'bits':
+      return { kind: 'bits', q: bitsQuestion(rng, params.board, params.maxValue) }
     case 'vlsm':
       return { kind: 'fields', q: vlsmQuestion(rng) }
     case 'breakfix':

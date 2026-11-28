@@ -52,7 +52,7 @@ test('a miss goes to reviews and progress survives closing the app', async ({ pa
   await expect(again.getByRole('link', { name: 'Reviews: 1 due' })).toBeVisible()
   const card2 = again.getByRole('article', { name: 'Subnet Sprint' })
   await expect(card2.getByRole('img', { name: /^1 of \d+ stars$/ })).toBeVisible()
-  await expect(card2).toContainText('1 of 8 levels passed')
+  await expect(card2).toContainText(/1 of \d+ levels passed/)
   await expect(card2).toContainText('1 to review')
   await expect(card2.getByRole('link', { name: '▶ Continue' })).toBeVisible()
 
