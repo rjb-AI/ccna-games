@@ -24,7 +24,7 @@ export function TilesView({
   const parts = check?.parts ?? []
   const text = (k: number) =>
     answered ? (response[k] ?? '') : slots[k] === null ? '' : (q.chips[slots[k] as number] ?? '')
-  const used = new Set(slots.filter((x): x is number => x !== null))
+  const used = new Set(q.reuse ? [] : slots.filter((x): x is number => x !== null))
   const firstEmpty = (s: (number | null)[]) => s.findIndex((x) => x === null)
 
   const place = (chip: number) => {
@@ -70,7 +70,7 @@ export function TilesView({
                           type="button"
                           className={`tile-slot${filled ? ' is-filled' : ''}${!answered && idx === active ? ' is-active' : ''}${part ? (part.correct ? ' is-right' : ' is-wrong') : ''}`}
                           disabled={answered}
-                          aria-label={`Blank ${idx + 1}: ${filled || 'empty'}`}
+                          aria-label={`${q.blankNames?.[idx] ?? `Blank ${idx + 1}`}: ${filled || 'empty'}`}
                           onClick={() => (filled ? clear(idx) : setActive(idx))}
                         >
                           {filled || '___'}
@@ -134,6 +134,7 @@ export function TilesView({
           </div>
         </>
       )}
+      <Visuals visuals={q.below} />
     </div>
   )
 }

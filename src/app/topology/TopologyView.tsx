@@ -46,6 +46,9 @@ export interface TopologyAssign {
   onTap(item: string): void
 }
 
+/** How far along its link a packet travels (the rest is the far device's box and label). */
+const FLOW_END = 0.75
+
 /** Half the size of a tap target, in CSS px (targets are 48px or more). */
 const HIT_PX = 24
 
@@ -298,8 +301,9 @@ export function TopologyView({
             const fwd = g.l.a.device === f.from
             const [x0, y0, x1, y1] = fwd ? [g.ax, g.ay, g.bx, g.by] : [g.bx, g.by, g.ax, g.ay]
             const style = {
-              '--dx': `${x1 - x0}px`,
-              '--dy': `${y1 - y0}px`,
+              // Stop short of the far end so the packet never covers the device's name.
+              '--dx': `${(x1 - x0) * FLOW_END}px`,
+              '--dy': `${(y1 - y0) * FLOW_END}px`,
               animationDelay: `${f.delayMs ?? 0}ms`,
             } as CSSProperties
             return (
@@ -326,15 +330,14 @@ export function TopologyView({
         </svg>
       </div>
       <figcaption>{v.caption}</figcaption>
-      {interactive && (
+      {/* The info line: always when something is hidden to fit, otherwise once you tap. */}
+      {interactive && (inspect || linksHidden || compact) && (
         <p className="topo-info" aria-live="polite">
           {inspect
             ? describe(inspect)
             : linksHidden
               ? 'Link speeds and costs are hidden to fit: tap a port to read one.'
-              : compact
-                ? 'Tap a dot to see its port, or a switch for its details.'
-                : 'Tap a port or switch for its details.'}
+              : 'Tap a dot to see its port, or a switch for its details.'}
         </p>
       )}
     </figure>

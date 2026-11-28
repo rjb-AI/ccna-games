@@ -16,7 +16,7 @@ import {
   prefixToMask,
   prefixToWildcard,
 } from '../../core/netmath'
-import { type Rng, stepRng } from '../../core/rng'
+import { type Rng, createRng, stepRng } from '../../core/rng'
 import {
   type Headers,
   type Nic,
@@ -44,6 +44,8 @@ import {
 export type PassportKind =
   | 'passport'
   | 'nat-passport'
+  | 'journey'
+  | 'nat-journey'
   | 'arp'
   | 'dhcp'
   | 'nat-table'
@@ -137,13 +139,14 @@ function worldVisuals(w: World, hot: string[], nat: boolean): [TopologyVisual, T
   return [
     {
       kind: 'topology',
-      caption: `PC → R1 → R2 → Server${nat ? '. R1 does PAT (overload) to its Gi0/1 address.' : ''}`,
+      caption: nat ? 'R1 does PAT (overload) to its Gi0/1 address.' : 'PC → R1 → R2 → Server',
       topology: {
         devices: [
+          // A loop (PC top left, Server bottom left) keeps the trip short on a phone.
           { id: 'PC', kind: 'host', label: 'PC', x: 0, y: 0 },
-          { id: 'R1', kind: 'router', label: 'R1', x: 0, y: 500 },
-          { id: 'R2', kind: 'router', label: 'R2', x: 0, y: 1000 },
-          { id: 'Server', kind: 'host', label: 'Server', x: 0, y: 1500 },
+          { id: 'R1', kind: 'router', label: 'R1', x: 1000, y: 0 },
+          { id: 'R2', kind: 'router', label: 'R2', x: 1000, y: 600 },
+          { id: 'Server', kind: 'host', label: 'Server', x: 0, y: 600 },
         ],
         links: [
           {
@@ -243,6 +246,75 @@ function passportQuestion(rng: Rng, nat: boolean): ChoiceQuestion {
     }`,
     hint: 'MACs: this link only. IPs: end to end (unless NAT).',
     mono: true,
+  }
+}
+
+/** Steps in a passport journey: three links there, then the reply over the same three back. */
+export const JOURNEY_STEPS = 6
+
+/**
+ * The passport journey: one trip (same addresses all session, from the seed), stamped link by
+ * link. Each stamp asks whose MAC and whose IP fill each field, with interface chips; the
+ * passport so far is a table, so the pattern shows. Headers from core headersThere/headersBack.
+ */
+function journeyQuestion(seed: number, step: number, nat: boolean): TilesQuestion {
+  const w = world(createRng(`${seed}:passport-journey:${nat}`), nat)
+  const nics = [w.pc, w.r1in, w.r1out, w.r2in, w.r2out, w.srv]
+  const name = (n: Nic) =>
+    n.device === 'PC' || n.device === 'Server' ? n.device : `${n.device} ${n.name}`
+  const byMac = (m: string) => name(nics.find((n) => n.mac === m) as Nic)
+  const byIp = (a: IPv4) => name(nics.find((n) => n.ip === a) as Nic)
+  const k = step % JOURNEY_STEPS
+  const back = k >= 3
+  const at = (j: number) => (j >= 3 ? 5 - j : j) // segment index for journey step j
+  const headers = (j: number) => (j >= 3 ? headersBack(w.path, at(j)) : headersThere(w.path, at(j)))
+  const seg = w.path.segments[at(k)] as RoutedPath['segments'][number]
+  const [from, to] = back ? [seg.to, seg.from] : [seg.from, seg.to]
+  const h = headers(k)
+  const answers = [byMac(h.srcMac), byMac(h.dstMac), byIp(h.srcIp), byIp(h.dstIp)]
+  const [topo, interfaces] = worldVisuals(w, [from.device, to.device], nat)
+  const linkIds = ['a', 'b', 'c']
+  const sofar = Array.from({ length: k }, (_, j) => {
+    const hj = headers(j)
+    const sj = w.path.segments[at(j)] as RoutedPath['segments'][number]
+    const [fj, tj] = j >= 3 ? [sj.to, sj.from] : [sj.from, sj.to]
+    return [
+      `${fj.device}→${tj.device}`,
+      `${byMac(hj.srcMac)} → ${byMac(hj.dstMac)}`,
+      `${byIp(hj.srcIp)} → ${byIp(hj.dstIp)}`,
+    ]
+  })
+  const translated = nat && h.srcIp !== w.path.srcIp
+  const natBack = nat && back && h.dstIp !== w.path.srcIp
+  const natNote = translated
+    ? ` R1 translated the source to its own Gi0/1 address (PAT), so the source IP is R1 Gi0/1.`
+    : natBack
+      ? ` The reply is addressed to R1 Gi0/1 (the PAT address) until R1 translates it back.`
+      : ''
+  return {
+    prompt: `${back ? 'Reply' : 'PC → Server'}: stamp the ${from.device} → ${to.device} link.`,
+    visuals: [{ ...topo, flows: [{ link: linkIds[at(k)] as string, from: from.device }] }],
+    below: [
+      ...(sofar.length
+        ? [
+            {
+              kind: 'table' as const,
+              caption: 'Passport so far',
+              columns: ['Link', 'MACs', 'IPs'],
+              rows: sofar,
+            },
+          ]
+        : []),
+      interfaces,
+    ],
+    caption: `Passport: ${from.device} → ${to.device}`,
+    lines: [`MAC ${BLANK} → ${BLANK}`, `IP  ${BLANK} → ${BLANK}`],
+    chips: nics.map(name),
+    answers,
+    reuse: true,
+    blankNames: ['Source MAC', 'Destination MAC', 'Source IP', 'Destination IP'],
+    explanation: `On this link ${name(from)} sends the frame to ${name(to)}, so those are the MACs: every router writes new ones. The IPs stay end to end (${byIp(h.srcIp)} → ${byIp(h.dstIp)}).${natNote}`,
+    hint: 'MACs: who sends and who receives on this one link. IPs: who started it and who it is for.',
   }
 }
 
@@ -651,6 +723,10 @@ function breakfixQuestion(rng: Rng): ChoiceQuestion {
 export function makeQuestion(params: PassportParams, seed: number, step: number): MixedQuestion {
   const rng = stepRng(seed, step)
   switch (rng.pick(params.kinds)) {
+    case 'journey':
+      return { kind: 'tiles', q: journeyQuestion(seed, step, false) }
+    case 'nat-journey':
+      return { kind: 'tiles', q: journeyQuestion(seed, step, true) }
     case 'passport':
       return { kind: 'choice', q: passportQuestion(rng, false) }
     case 'nat-passport':

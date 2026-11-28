@@ -51,3 +51,12 @@ table; NAT table roles; all 7 faults appear. Core tests for forwarding, DHCP and
   for one server (`ip nat inside source static <inside local> <inside global>`). Syntax from
   Cisco "Configure Network Address Translation".
 - The NAT table level now draws as match pairs (term ↔ address); answers unchanged.
+
+## The journey (mechanics step 7)
+
+- `journey` and `nat-journey` (Learn, 6 steps): one trip per session (addresses from the seed):
+  three links PC → Server, then the reply back. Each step stamps one link: whose MAC and whose
+  IP go in each field, from interface chips (reusable). The packet moves on the current link;
+  the passport so far is a table under the chips, so the pattern shows (MACs change each hop,
+  IPs stay unless PAT rewrites them). Headers from core `headersThere` / `headersBack`; a unit
+  test checks every step against a hand-written trip.

@@ -11,6 +11,8 @@ export const BLANK = '{_}'
 export interface TilesQuestion {
   prompt: string
   visuals?: readonly Visual[]
+  /** Reference shown under the chips (tables you look up, not the picture you need first). */
+  below?: readonly Visual[]
   caption: string
   /** Lines with BLANK where a chip goes. */
   lines: readonly string[]
@@ -18,6 +20,10 @@ export interface TilesQuestion {
   chips: readonly string[]
   /** The right chip for each blank, in reading order. */
   answers: readonly string[]
+  /** Chips stay in the bank after use (one chip can fill several blanks). */
+  reuse?: boolean
+  /** How each blank reads in feedback, e.g. "Source MAC" (default "Blank N"). */
+  blankNames?: readonly string[]
   explanation: string
   hint?: string
 }
@@ -43,7 +49,7 @@ export function fillLines(q: TilesQuestion, r: TilesResponse): string[] {
 export function checkTiles(q: TilesQuestion, r: TilesResponse): Check {
   const parts: CheckPart[] = q.answers.map((want, i) => ({
     id: String(i),
-    label: `Blank ${i + 1}`,
+    label: q.blankNames?.[i] ?? `Blank ${i + 1}`,
     given: r[i] ?? '',
     expected: want,
     correct: r[i] === want,

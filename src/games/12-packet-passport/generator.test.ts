@@ -72,3 +72,38 @@ describe('Packet Passport generator', () => {
     expect(seen.size).toBe(7)
   })
 })
+
+describe('passport journey', () => {
+  // Hand-written trip: [src MAC, dst MAC, src IP, dst IP] per journey step, without and with PAT.
+  const plain = [
+    ['PC', 'R1 Gi0/0', 'PC', 'Server'],
+    ['R1 Gi0/1', 'R2 Gi0/0', 'PC', 'Server'],
+    ['R2 Gi0/1', 'Server', 'PC', 'Server'],
+    ['Server', 'R2 Gi0/1', 'Server', 'PC'],
+    ['R2 Gi0/0', 'R1 Gi0/1', 'Server', 'PC'],
+    ['R1 Gi0/0', 'PC', 'Server', 'PC'],
+  ]
+  const pat = [
+    ['PC', 'R1 Gi0/0', 'PC', 'Server'],
+    ['R1 Gi0/1', 'R2 Gi0/0', 'R1 Gi0/1', 'Server'],
+    ['R2 Gi0/1', 'Server', 'R1 Gi0/1', 'Server'],
+    ['Server', 'R2 Gi0/1', 'Server', 'R1 Gi0/1'],
+    ['R2 Gi0/0', 'R1 Gi0/1', 'Server', 'R1 Gi0/1'],
+    ['R1 Gi0/0', 'PC', 'Server', 'PC'],
+  ]
+  for (const [kind, want] of [
+    ['journey', plain],
+    ['nat-journey', pat],
+  ] as const) {
+    it(`${kind}: every stamp matches the hand-written trip`, () => {
+      for (let seed = 0; seed < 30; seed++) {
+        for (let step = 0; step < 6; step++) {
+          const m = makeQuestion({ kinds: [kind] }, seed, step)
+          if (m.kind !== 'tiles') throw new Error(m.kind)
+          expect(m.q.answers).toEqual(want[step])
+          for (const a of m.q.answers) expect(m.q.chips).toContain(a)
+        }
+      }
+    })
+  }
+})
