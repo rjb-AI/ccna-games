@@ -7,9 +7,8 @@ of each column.
 ## Doing
 
 - **Game-like mechanics, in the MECHANICS.md build order** (user: "do them in the order you
-  suggested"). Steps 1 (bins), 2 (tap the diagram) and 3 (labels on the diagram) done. Now:
-  step 4, swipe deck (ACL door, Hex legal or broken, Wi-Fi "will it connect?", AI desk, FHRP
-  preempt), then bit board, match pairs and code tiles, packet path, grid placement. Still to
+  suggested"). Steps 1-4 done (bins, tap the diagram, labels on the diagram, swipe deck).
+  Now: step 5, bit board; then match pairs and code tiles, packet path, grid placement. Still to
   move onto the diagram: Airwaves channels (needs a floor-plan visual), AP ports. Before each: inspiration from `docs/INSPIRATION.md` (user: look up
   games of each type first). Still to move onto tapping: Neighbor Detective (tap the mistake),
   Longest Match rows, ACL/YAML bad line, router ID row.
@@ -18,6 +17,11 @@ of each column.
 
 - **Coverage and ambiguity leftovers**: ACL break-fix with only 2 lines to choose from; ETSI
   channel plans note in Airwaves; AI desk depth; NAT static inside-global collision check.
+
+- **Swipe deck for more games**: Hex Garden legal/broken, Wi-Fi "will it connect?", AI desk,
+  FHRP preempt (each needs new level ids).
+- **ACL door on one screen**: long ACL lines need a scroll to read on a phone; find a compact
+  layout that still shows real IOS syntax.
 
 ## Later
 
@@ -56,6 +60,12 @@ Reusable interaction kinds, then which games use them:
 - **Fix the file**: Playbook Runner, tap lines to indent/outdent YAML.
 
 ## Done
+
+- 28 Nov: **Swipe deck** (mechanics step 4): one card at a time; drag left/right (tilt, preview
+  label, springs back before the commit point), two big buttons or arrow keys. Learn shows a
+  reason card after each card and highlights the ACL line that decided; Drill flashes ✓/✗.
+  ACL Bouncer "the door": 5 packets per question against one ACL (new level ids door-standard,
+  door-extended, door-rush). Views now get the level's mode from the frame.
 
 - 28 Nov: **Labels on the diagram** (mechanics step 3): tap a badge on a port or router to cycle
   its label, with a letter legend (never colour alone) and ✓/✗ on the drawing after checking.

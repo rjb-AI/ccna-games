@@ -1,6 +1,7 @@
 import { BinsView } from './BinsView'
 import { ChoiceView } from './ChoiceView'
 import { DiagramLabelsView } from './DiagramLabelsView'
+import { SwipeView } from './SwipeView'
 import { CliView } from './CliView'
 import { TapView } from './TapView'
 import { WireBoardView } from './WireBoardView'
@@ -13,6 +14,14 @@ import type { LabelsResponse } from './labels'
 import type { OrderResponse } from './order'
 import { type MixedQuestion, type MixedResponse, isCli } from './mixed'
 import type { QuestionViewProps } from './types'
+
+/** One way to draw a label question per display mode. */
+const LABEL_VIEWS = {
+  list: LabelsView,
+  bins: BinsView,
+  diagram: DiagramLabelsView,
+  swipe: SwipeView,
+} as const
 
 export function MixedView(props: QuestionViewProps<MixedQuestion, MixedResponse>) {
   const { question: m, response, ...rest } = props
@@ -72,8 +81,7 @@ export function MixedView(props: QuestionViewProps<MixedQuestion, MixedResponse>
     )
   }
   if (m.kind === 'labels') {
-    const View =
-      m.q.display === 'bins' ? BinsView : m.q.display === 'diagram' ? DiagramLabelsView : LabelsView
+    const View = LABEL_VIEWS[m.q.display ?? 'list']
     return (
       <View
         {...rest}

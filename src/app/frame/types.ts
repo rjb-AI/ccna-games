@@ -1,5 +1,5 @@
 import { type ReactNode, createElement } from 'react'
-import type { Check, GameLogic, LevelDef } from '../../core/game'
+import type { Check, GameLogic, LevelDef, Mode } from '../../core/game'
 
 export interface QuestionViewProps<Q, R> {
   question: Q
@@ -9,6 +9,8 @@ export interface QuestionViewProps<Q, R> {
   onAnswer(response: R): void
   /** Hints setting is on and the mode allows hints (Learn). The view decides how to offer them. */
   hintsAllowed: boolean
+  /** The level's mode, for views that pace themselves (Learn explains each step; Drill flows). */
+  mode: Mode
 }
 
 /** A game as the frame sees it. `defineGame` erases the generic types for the registry. */

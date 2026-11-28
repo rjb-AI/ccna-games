@@ -5,21 +5,21 @@ const T = ['v2-4.6']
 
 export const LEVELS: readonly LevelDef<BouncerParams>[] = [
   {
-    id: 'standard',
+    id: 'door-standard',
     title: 'Learn: standard ACLs at the door',
     mode: 'learn',
-    generatorParams: { kinds: ['standard'] },
+    generatorParams: { kinds: ['door-standard'] },
     passScore: 60,
-    questionCount: 6,
+    questionCount: 3,
     topics: T,
   },
   {
-    id: 'extended',
+    id: 'door-extended',
     title: 'Learn: extended ACLs at the door',
     mode: 'learn',
-    generatorParams: { kinds: ['extended'] },
+    generatorParams: { kinds: ['door-extended'] },
     passScore: 60,
-    questionCount: 8,
+    questionCount: 4,
     topics: T,
   },
   {
@@ -32,13 +32,13 @@ export const LEVELS: readonly LevelDef<BouncerParams>[] = [
     topics: T,
   },
   {
-    id: 'door-drill',
+    id: 'door-rush',
     title: 'Drill: busy night at the door',
     mode: 'drill',
-    generatorParams: { kinds: ['standard', 'extended', 'extended', 'wildcard'] },
+    generatorParams: { kinds: ['door-standard', 'door-extended', 'door-extended'] },
     passScore: 70,
     timeLimit: 240,
-    questionCount: 12,
+    questionCount: 5,
     topics: T,
   },
   {
