@@ -4,25 +4,25 @@ import { isPlayable, snapshotQueue } from './queue'
 
 const T0 = Date.UTC(2026, 10, 28, 12)
 const MIN = 60_000
-const card = (levelId: string, step: number, due: number, gameId = 'demo') => ({
+const card = (levelId: string, step: number, due: number, gameId = 'subnet-sprint') => ({
   ...newCard({ gameId, levelId, seed: 1, step, topics: [] }, T0),
   due,
 })
 
 describe('review queue', () => {
   it('only cards whose game and level exist are playable', () => {
-    expect(isPlayable(card('learn', 0, T0))).toBe(true)
+    expect(isPlayable(card('basics-24', 0, T0))).toBe(true)
     expect(isPlayable(card('gone', 0, T0))).toBe(false)
-    expect(isPlayable(card('learn', 0, T0, 'deleted-game'))).toBe(false)
+    expect(isPlayable(card('basics-24', 0, T0, 'deleted-game'))).toBe(false)
   })
 
   it('due list and next due time ignore unplayable cards', () => {
     const q = snapshotQueue(
       [
-        card('learn', 1, T0 - MIN),
-        card('learn', 2, T0 - 5 * MIN),
-        card('learn', 3, T0 + 10 * MIN),
-        card('learn', 4, T0 - MIN, 'deleted-game'),
+        card('basics-24', 1, T0 - MIN),
+        card('basics-24', 2, T0 - 5 * MIN),
+        card('basics-24', 3, T0 + 10 * MIN),
+        card('basics-24', 4, T0 - MIN, 'deleted-game'),
         card('gone', 5, T0 + MIN),
       ],
       T0,
@@ -32,7 +32,7 @@ describe('review queue', () => {
   })
 
   it('a card answered wrong stays in the due list; answered right it leaves', () => {
-    const c = card('learn', 0, T0)
+    const c = card('basics-24', 0, T0)
     expect(snapshotQueue([gradeCard(c, false, T0)], T0).due).toHaveLength(1)
     expect(snapshotQueue([gradeCard(c, true, T0)], T0).due).toHaveLength(0)
   })

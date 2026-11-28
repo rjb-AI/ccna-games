@@ -49,7 +49,6 @@ export function Hub() {
     new Map<string, LevelProgress>(),
   )
   const due = useDueCount()
-  const demo = GAMES.filter((g) => g.domainId === null)
 
   return (
     <main className="hub">
@@ -95,16 +94,6 @@ export function Hub() {
           </section>
         )
       })}
-
-      {demo.length > 0 && (
-        <section className="hub-domain" aria-labelledby="demo-title">
-          <h2 id="demo-title">Frame demo (temporary)</h2>
-          <p className="hub-weight">Not exam content. Proves scoring, saving and reviews work.</p>
-          {demo.map((g) => (
-            <GameCard key={g.id} game={g} progress={progress} />
-          ))}
-        </section>
-      )}
     </main>
   )
 }

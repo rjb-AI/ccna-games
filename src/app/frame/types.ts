@@ -15,8 +15,8 @@ export interface QuestionViewProps<Q, R> {
 export interface GameModule<P, Q, R> extends GameLogic<P, Q, R> {
   id: string
   title: string
-  /** One of DOMAINS[].id, or null for the temporary demo. */
-  domainId: string | null
+  /** One of DOMAINS[].id. */
+  domainId: string
   levels: readonly LevelDef<P>[]
   View(props: QuestionViewProps<Q, R>): ReactNode
 }
@@ -24,7 +24,7 @@ export interface GameModule<P, Q, R> extends GameLogic<P, Q, R> {
 export interface RegisteredGame {
   id: string
   title: string
-  domainId: string | null
+  domainId: string
   levels: readonly LevelDef[]
   makeQuestion(level: LevelDef, seed: number, step: number): unknown
   check(question: unknown, response: unknown): Check

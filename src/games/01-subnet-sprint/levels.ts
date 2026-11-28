@@ -1,0 +1,81 @@
+import type { LevelDef } from '../../core/game'
+import type { SprintParams } from './generator'
+
+const T = ['v2-1.3']
+
+export const LEVELS: readonly LevelDef<SprintParams>[] = [
+  {
+    id: 'basics-24',
+    title: 'Learn: /24 warm-up',
+    mode: 'learn',
+    generatorParams: { kind: 'subnet', minPrefix: 24, maxPrefix: 24 },
+    passScore: 60,
+    questionCount: 5,
+    topics: T,
+  },
+  {
+    id: 'last-octet',
+    title: 'Learn: /25 to /30',
+    mode: 'learn',
+    generatorParams: { kind: 'subnet', minPrefix: 25, maxPrefix: 30 },
+    passScore: 60,
+    questionCount: 5,
+    topics: T,
+  },
+  {
+    id: 'any-prefix',
+    title: 'Learn: any prefix /8 to /30',
+    mode: 'learn',
+    generatorParams: { kind: 'subnet', minPrefix: 8, maxPrefix: 30 },
+    passScore: 60,
+    questionCount: 5,
+    topics: T,
+  },
+  {
+    id: 'sprint',
+    title: 'Drill: subnet sprint',
+    mode: 'drill',
+    generatorParams: { kind: 'subnet', minPrefix: 16, maxPrefix: 30 },
+    passScore: 70,
+    timeLimit: 300,
+    questionCount: 8,
+    topics: T,
+  },
+  {
+    id: 'how-many-learn',
+    title: 'Learn: how many subnets and hosts',
+    mode: 'learn',
+    generatorParams: { kind: 'how-many' },
+    passScore: 60,
+    questionCount: 8,
+    topics: T,
+  },
+  {
+    id: 'how-many-drill',
+    title: 'Drill: masks, subnets and hosts',
+    mode: 'drill',
+    generatorParams: { kind: 'how-many' },
+    passScore: 70,
+    timeLimit: 150,
+    questionCount: 10,
+    topics: T,
+  },
+  {
+    id: 'vlsm',
+    title: 'Learn: VLSM puzzles',
+    mode: 'learn',
+    generatorParams: { kind: 'vlsm' },
+    passScore: 60,
+    questionCount: 3,
+    topics: T,
+  },
+  {
+    id: 'breakfix',
+    title: 'Break-Fix: PC can’t connect',
+    mode: 'breakfix',
+    generatorParams: { kind: 'breakfix' },
+    passScore: 60,
+    questionCount: 6,
+    topics: T,
+  },
+]

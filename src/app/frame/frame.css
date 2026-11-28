@@ -240,3 +240,153 @@ button {
 .settings-message {
   font-weight: 600;
 }
+
+/* Given facts (IP, mask, scenario details) */
+.facts {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-2);
+}
+
+.facts div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.facts dt {
+  color: var(--color-text-muted);
+}
+
+.facts dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* Multi-field answers */
+.fields-list {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 var(--space-2);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--space-1) var(--space-2);
+  text-align: left;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-border);
+  font-weight: 400;
+}
+
+.field:disabled {
+  cursor: default;
+}
+
+.field.is-active {
+  border-color: var(--color-accent);
+}
+
+.field.is-right {
+  border-color: var(--color-good);
+  background-color: var(--color-good-bg);
+}
+
+.field.is-wrong {
+  border-color: var(--color-bad);
+  background-color: var(--color-bad-bg);
+}
+
+.field-label {
+  color: var(--color-text-muted);
+}
+
+.field-value {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  min-width: 4ch;
+  text-align: right;
+  white-space: pre;
+}
+
+.field .mark {
+  flex-basis: 100%;
+  font-weight: 700;
+}
+
+.field.is-right .mark {
+  color: var(--color-good);
+}
+
+.field.is-wrong .mark {
+  color: var(--color-bad);
+}
+
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background-color: var(--color-accent);
+}
+
+.field-error {
+  color: var(--color-bad);
+  font-weight: 700;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-1);
+  max-width: 420px;
+}
+
+.keypad button {
+  min-height: 56px;
+  font-size: var(--font-size-h2);
+  font-family: var(--font-mono);
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.keypad-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.keypad-actions button {
+  min-height: 56px;
+}
+
+.points {
+  color: var(--color-star);
+  font-weight: 700;
+}
+
+.choice-list.is-mono .choice-btn span:first-child {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.feedback p,
+.missed p {
+  overflow-wrap: anywhere;
+}

@@ -1,15 +1,9 @@
 import { useState } from 'react'
+import type { ChoiceQuestion } from './choice'
+import { Facts } from './Facts'
 import type { QuestionViewProps } from './types'
 
 /** A question answered by tapping one of several choices. Reusable by any game. */
-export interface ChoiceQuestion {
-  prompt: string
-  choices: readonly string[]
-  answer: string
-  explanation: string
-  hint?: string
-}
-
 export function ChoiceView({
   question,
   response,
@@ -24,6 +18,7 @@ export function ChoiceView({
       <p className="choice-prompt" id="question-prompt">
         {question.prompt}
       </p>
+      {question.facts && <Facts facts={question.facts} />}
       {hintsAllowed && question.hint && !answered && (
         <div className="hint">
           {hintOpen ? (
@@ -35,7 +30,11 @@ export function ChoiceView({
           )}
         </div>
       )}
-      <div className="choice-list" role="group" aria-labelledby="question-prompt">
+      <div
+        className={`choice-list${question.mono ? ' is-mono' : ''}`}
+        role="group"
+        aria-labelledby="question-prompt"
+      >
         {question.choices.map((c) => {
           const isPicked = response === c
           const isRight = answered && check !== null && c === check.expected

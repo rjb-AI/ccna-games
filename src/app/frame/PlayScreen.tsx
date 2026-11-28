@@ -6,6 +6,8 @@ import {
   type SessionResult,
   MODE_LABELS,
   currentStep,
+  currentStreak,
+  streakMultiplier,
   endSession,
   isOver,
   recordAnswer,
@@ -86,6 +88,7 @@ function Play({ game, level, initialSeed, onRestart }: PlayProps) {
   const nextRef = useRef<HTMLButtonElement>(null)
 
   const step = currentStep(session)
+  const streak = currentStreak(session.steps)
   const question = useMemo(
     () => game.makeQuestion(level, session.seed, step),
     [game, level, session.seed, step],
@@ -176,6 +179,12 @@ function Play({ game, level, initialSeed, onRestart }: PlayProps) {
       <p className="play-progress">
         Question {step + 1} of {session.questionCount}
         {left !== undefined && <> · {formatClock(left)} left</>}
+        {level.mode === 'drill' && streak > 0 && (
+          <span className="points">
+            {' '}
+            · {streak} in a row{streakMultiplier(streak) > 1 && <> · x{streakMultiplier(streak)}</>}
+          </span>
+        )}
       </p>
 
       <div key={step}>
