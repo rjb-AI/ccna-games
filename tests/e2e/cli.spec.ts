@@ -12,7 +12,9 @@ async function type(page: Page, line: string) {
 
 test('Port Architect: solve a work order in the command line', async ({ page }) => {
   await page.goto('./#/play/port-architect/access?seed=11')
-  const order = await page.getByRole('list', { name: 'Work order' }).locator('li').allInnerTexts()
+  const orderList = page.getByRole('list', { name: 'Work order' })
+  await expect(orderList.locator('li').first()).toBeVisible()
+  const order = await orderList.locator('li').allInnerTexts()
   expect(order.length).toBeGreaterThan(0)
 
   await type(page, 'conf t')

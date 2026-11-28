@@ -24,6 +24,12 @@
   --color-bad: #ff8e88; /* ~8:1 on --color-bg */
   --color-bad-bg: #2d1517;
   --color-star: #ffd33d;
+  /* Cable wire colours (TIA-568 pairs), as close to real jacket colours as the dark theme allows. */
+  --color-wire-green: #2ea043;
+  --color-wire-orange: #f0883e;
+  --color-wire-blue: #388bfd;
+  --color-wire-brown: #9e6a3b;
+  --wire-white: #f5f7fa;
 
   /* Type */
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
