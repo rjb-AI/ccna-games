@@ -88,12 +88,16 @@ export function shortIfName(name: string): string {
  * Expand an `interface range` argument such as "gi1/0/1 - 4, gi1/0/10" into canonical names.
  * Ranges vary the last number only, as on IOS. Returns null if the text is not a valid range.
  */
+/** The most interfaces one range may cover (a 48-port switch plus uplinks). */
+export const MAX_RANGE = 64
+
 export function expandIfRange(text: string): string[] | null {
   const out: string[] = []
   for (const partRaw of text.split(',')) {
     const part = partRaw.trim()
     if (!part) return null
-    const [left = '', right, ...rest] = part.split('-').map((s) => s.trim())
+    // IOS needs a space before the range hyphen, so "port-channel1 - 2" splits correctly.
+    const [left = '', right, ...rest] = part.split(/\s+-\s*/).map((s) => s.trim())
     if (rest.length) return null
     // "gi1/0/1" or "gi 1/0/1"
     const parsed = parseIfName(left.split(/\s+/))
@@ -103,10 +107,11 @@ export function expandIfRange(text: string): string[] | null {
       continue
     }
     if (!/^\d+$/.test(right)) return null
+    if (parsed.number.includes('.')) return null // no subinterface ranges here
     const segs = parsed.number.split('/')
     const start = Number(segs[segs.length - 1])
     const end = Number(right)
-    if (end < start) return null
+    if (end < start || end - start >= MAX_RANGE) return null
     const base = segs.slice(0, -1).join('/')
     for (let n = start; n <= end; n++) {
       out.push(`${parsed.type.full}${base ? `${base}/` : ''}${n}`)

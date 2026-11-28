@@ -47,7 +47,7 @@ const SCENARIOS: { text: string; a: string; wrong: string[]; why: string }[] = [
     why: 'Mixed operating systems need VMs, and a bare-metal (type 1) hypervisor has no host OS in the way, so it performs best.',
   },
   {
-    text: 'You want to try a Linux router image on your Windows laptop for a CCNA lab.',
+    text: 'You want to try a Linux router image in VirtualBox on your Windows laptop for a CCNA lab.',
     a: 'A VM on a type 2 hypervisor',
     wrong: ['A VM on a type 1 hypervisor', 'A container on Kubernetes', 'A new physical server'],
     why: 'A type 2 hypervisor (like VirtualBox) runs as an app on your existing OS: ideal for a laptop lab.',

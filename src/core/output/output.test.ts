@@ -46,8 +46,8 @@ export function randomSwitch(rng: Rng): DeviceState {
   }
   const up = PORTS.slice(24)
   if (rng.chance(0.6)) {
-    const mode = rng.pick<ChannelMode>(['active', 'passive', 'desirable', 'auto'])
-    const far = rng.pick<ChannelMode>(['active', 'passive', 'desirable', 'auto'])
+    const mode = rng.pick<ChannelMode>(['active', 'passive', 'desirable', 'auto', 'on'])
+    const far = rng.pick<ChannelMode>(['active', 'passive', 'desirable', 'auto', 'on'])
     const group = rng.int(1, 12)
     lines.push(`interface range ${up[0]} - 2`, ` channel-group ${group} mode ${mode}`)
     for (const p of up.slice(0, 2))

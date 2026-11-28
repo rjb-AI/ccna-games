@@ -114,7 +114,7 @@ function tryMode(
             selected: s.selected,
             vlansSelected: s.vlansSelected,
           },
-          entry: { output: inner.entry.output, notes: inner.entry.notes },
+          entry: { output: shiftCaret(inner.entry, s, input), notes: inner.entry.notes },
         }
       }
       const ctx: RunContext = {
@@ -140,6 +140,19 @@ const SUBMODES: readonly Mode[] = [
   'config-router',
 ]
 
+/**
+ * An error inside `do <command>` is printed under the line as typed in config mode: move the
+ * caret from the inner EXEC prompt and column to the outer prompt and the word's real column.
+ */
+function shiftCaret(inner: Entry, outer: Session, input: string): string[] {
+  const caret = inner.output[0]
+  if (!caret || !/^ *\^$/.test(caret)) return inner.output
+  const innerColumn = caret.indexOf('^') - inner.prompt.length
+  const argStart = /^\s*\S+\s+/.exec(input)?.[0].length ?? 0
+  const col = promptOf(outer).length + argStart + innerColumn
+  return [`${' '.repeat(col)}^`, ...inner.output.slice(1)]
+}
+
 /** Run one typed line. */
 export function execute(
   s: Session,
@@ -158,8 +171,21 @@ export function execute(
     if (global.run) chosen = global
   }
   if (!chosen.run) {
+    // If the line is a real global command this level doesn't use, say so rather than
+    // "invalid input" from the sub-mode.
+    const global = SUBMODES.includes(s.mode)
+      ? parseLine(input, 'config', catalogue, s.state.kind)
+      : null
+    const failed =
+      global &&
+      !global.ok &&
+      global.error === 'unsupported' &&
+      !here.result.ok &&
+      here.result.error === 'invalid'
+        ? global
+        : here.result
     const err = errorLines(
-      here.result as Exclude<ReturnType<typeof parseLine>, { ok: true }>,
+      failed as Exclude<ReturnType<typeof parseLine>, { ok: true }>,
       prompt,
       input,
     )

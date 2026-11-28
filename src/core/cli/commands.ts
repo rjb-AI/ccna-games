@@ -14,12 +14,14 @@ import {
   type VlanSet,
   cloneState,
   defaultVlanName,
+  isReservedVlan,
   newInterface,
   toVlanSet,
   vlanList,
 } from '../device/state'
-import { maskToPrefix, parseIPv4 } from '../netmath'
+import { broadcastOf, formatIPv4, maskToPrefix, networkOf, parseIPv4 } from '../netmath'
 import { parseIPv6 } from '../netmath/ipv6'
+import { copyL2Settings, l2Key } from '../sim/l2/etherchannel'
 import { type Args, type CommandDef, type RunContext, type RunResult, arg, kw } from './grammar'
 import { shortIfName } from './ifname'
 import { SHOW_COMMANDS } from './show'
@@ -47,19 +49,15 @@ function eachSelected(
   for (const name of ctx.selected) {
     const i = state.interfaces[name]
     if (!i) continue
+    const before = l2Key(i)
     const note = change(i, state)
     if (note) notes.push(note)
-    // Settings on a port-channel interface are copied to its member ports, as on IOS.
-    if (i.kind === 'port-channel' && !note) {
+    // Switchport changes on a port-channel interface are copied to its member ports, as on IOS.
+    // Other commands (description, shutdown...) leave the members alone.
+    if (i.kind === 'port-channel' && l2Key(i) !== before) {
       const group = Number(name.replace('Port-channel', ''))
       for (const m of Object.values(state.interfaces)) {
-        if (m.channelGroup?.id === group) {
-          m.switchport = i.switchport
-          m.mode = i.mode
-          m.accessVlan = i.accessVlan
-          m.nativeVlan = i.nativeVlan
-          m.allowedVlans = i.allowedVlans === 'all' ? 'all' : [...i.allowedVlans]
-        }
+        if (m.channelGroup?.id === group) copyL2Settings(i, m)
       }
     }
   }
@@ -160,14 +158,21 @@ export const COMMANDS: readonly CommandDef[] = [
     run: (ctx, a, negated) => {
       const state = cloneState(ctx.state)
       const vlans = a.vlans as number[]
+      const fixed = vlans.filter((v) => v === 1 || isReservedVlan(v))
       if (negated) {
         state.vlans = withoutKeys(
           state.vlans,
-          vlans.filter((v) => v !== 1),
+          vlans.filter((v) => !fixed.includes(v)),
         )
-        const notes = vlans.includes(1) ? ['VLAN 1 is the default VLAN and cannot be deleted.'] : []
+        const notes = fixed.length
+          ? [`VLAN ${fixed.join(', ')} is a default VLAN and can't be deleted.`]
+          : []
         return { state, notes }
       }
+      if (fixed.some(isReservedVlan))
+        return {
+          notes: ['VLANs 1002-1005 are reserved defaults (old FDDI and Token Ring); pick another.'],
+        }
       for (const v of vlans) ensureVlan(state, v)
       return { state, mode: 'config-vlan', vlansSelected: vlans, selected: [] }
     },
@@ -181,10 +186,12 @@ export const COMMANDS: readonly CommandDef[] = [
     help: 'Name the VLAN',
     run: (ctx, a, negated) => {
       const state = cloneState(ctx.state)
+      const notes: string[] = []
       for (const v of ctx.vlansSelected) {
-        state.vlans[v] = negated ? defaultVlanName(v) : (a.name as string)
+        if (v === 1) notes.push('VLAN 1 is the default VLAN; its name can’t be changed.')
+        else state.vlans[v] = negated ? defaultVlanName(v) : (a.name as string)
       }
-      return { state }
+      return { state, notes }
     },
   },
   {
@@ -390,8 +397,9 @@ export const COMMANDS: readonly CommandDef[] = [
           i.voiceVlan = negated ? null : (a.vlan as number)
           // Configuring a voice VLAN turns PortFast on (Catalyst 9300 VLAN guide; facts item 23).
           if (!negated) i.portfast = true
+          // No real sample of what IOS prints here, so a game note rather than a % message.
           if (!negated && ensureVlan(state, a.vlan as number))
-            return ACCESS_VLAN_CREATED(a.vlan as number)
+            return `VLAN ${a.vlan as number} didn't exist, so the switch created it.`
         }),
       ),
   },
@@ -476,8 +484,17 @@ export const COMMANDS: readonly CommandDef[] = [
           return
         }
         const mask = parseIPv4(a.mask as string) as number
-        if (maskToPrefix(mask) === null) return `${a.mask as string} is not a valid subnet mask.`
-        i.ipv4 = { address: parseIPv4(a.address as string) as number, mask }
+        const prefix = maskToPrefix(mask)
+        if (prefix === null) return `${a.mask as string} is not a valid subnet mask.`
+        const address = parseIPv4(a.address as string) as number
+        // An interface needs a host address: not the subnet's network or broadcast address
+        // (except on /31 and /32, which have no network/broadcast).
+        if (
+          prefix <= 30 &&
+          (address === networkOf(address, prefix) || address === broadcastOf(address, prefix))
+        )
+          return `${a.address as string} is the ${address === networkOf(address, prefix) ? 'network' : 'broadcast'} address of its subnet; an interface needs a host address.`
+        i.ipv4 = { address, mask }
         i.ipMethod = 'manual'
       }),
   },
@@ -519,14 +536,9 @@ function channelGroup(ctx: RunContext, cg: { id: number; mode: ChannelMode } | n
   const joined = ctx.selected.filter((n) => state.interfaces[n]?.channelGroup?.id === group)
   if (!state.interfaces[po] && joined.length) {
     const first = state.interfaces[joined[0] as string] as Interface
-    state.interfaces[po] = {
-      ...newInterface(po, 'port-channel'),
-      switchport: first.switchport,
-      mode: first.mode,
-      accessVlan: first.accessVlan,
-      nativeVlan: first.nativeVlan,
-      allowedVlans: first.allowedVlans === 'all' ? 'all' : [...first.allowedVlans],
-    }
+    const created = newInterface(po, 'port-channel')
+    copyL2Settings(first, created)
+    state.interfaces[po] = created
   }
   return r
 }
@@ -615,6 +627,14 @@ function staticRouteCommands(): CommandDef[] {
       const prefix = maskToPrefix(mask)
       if (prefix === null) return { notes: [`${a.mask as string} is not a valid subnet mask.`] }
       const network = parseIPv4(a.network as string) as number
+      // IOS refuses a destination with host bits set for its mask. No real sample of the
+      // message yet, so a game note explains it.
+      if (networkOf(network, prefix) !== network)
+        return {
+          notes: [
+            `${a.network as string} isn't a network address for mask ${a.mask as string} (its host bits aren't zero). The network is ${formatIPv4(networkOf(network, prefix))}.`,
+          ],
+        }
       const route: StaticRoute = {
         family: 'ipv4',
         network,
@@ -662,7 +682,41 @@ function staticRouteCommands(): CommandDef[] {
       )
     },
   })
-  return [v4('ipv4'), v4('iface'), v6('ipv6'), v6('iface')]
+  // "no ip route NET MASK" / "no ipv6 route PREFIX" remove every static route to that prefix.
+  const removeAll = (family: 'ipv4' | 'ipv6'): CommandDef => ({
+    id: family === 'ipv4' ? 'config.ip-route' : 'config.ipv6-route',
+    modes: ['config'],
+    pattern:
+      family === 'ipv4'
+        ? [kw('ip'), kw('route'), arg('ipv4', 'network'), arg('ipv4', 'mask')]
+        : [kw('ipv6'), kw('route'), arg('ipv6-prefix', 'prefix')],
+    negatable: true,
+    negatedOnly: true,
+    help: 'Remove every static route to this prefix',
+    run: (ctx, a) => {
+      const state = cloneState(ctx.state)
+      if (family === 'ipv4') {
+        const net = parseIPv4(a.network as string)
+        const mask = parseIPv4(a.mask as string)
+        state.staticRoutes = state.staticRoutes.filter(
+          (r) => !(r.family === 'ipv4' && r.network === net && r.mask === mask),
+        )
+      } else {
+        const [addr = '', len = '0'] = (a.prefix as string).split('/')
+        const net = JSON.stringify(parseIPv6(addr))
+        state.staticRoutes = state.staticRoutes.filter(
+          (r) =>
+            !(
+              r.family === 'ipv6' &&
+              JSON.stringify(r.network6) === net &&
+              r.prefixLength === Number(len)
+            ),
+        )
+      }
+      return { state }
+    },
+  })
+  return [v4('ipv4'), v4('iface'), v6('ipv6'), v6('iface'), removeAll('ipv4'), removeAll('ipv6')]
 }
 
 /** Add a route, or with "no" remove the matching one (same prefix and same next hop). */

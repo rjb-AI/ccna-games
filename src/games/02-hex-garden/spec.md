@@ -6,7 +6,7 @@ Topics: v2-1.4 (IPv6 addressing, EUI-64)
 
 | Level          | Mode      | What's generated                                                                     | Pass | Time  |
 | -------------- | --------- | ------------------------------------------------------------------------------------ | ---- | ----- |
-| `compress`     | Learn     | Full address → pick the shortest legal form                                          | 60%  | –     |
+| `compress`     | Learn     | Full address → pick the recommended short form (RFC 5952)                            | 60%  | –     |
 | `expand`       | Learn     | Short form with "::" → pick the full form                                            | 60%  | –     |
 | `types`        | Learn     | Address → global unicast, link-local, unique local, multicast, loopback, unspecified | 60%  | –     |
 | `eui64`        | Learn     | MAC (Cisco format) → interface ID, or full address with a /64 prefix                 | 60%  | –     |

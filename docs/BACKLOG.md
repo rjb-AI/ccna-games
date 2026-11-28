@@ -6,32 +6,17 @@ of each column.
 
 ## Doing
 
-- **Game-like mechanics, game by game** (see "Mechanics ideas"). Next up: pick the order with
-  the user.
+- **Game-like mechanics, game by game**: full proposal in `docs/MECHANICS.md` (8 reusable kinds,
+  every game, build order). Waiting for the user to pick where to start; recommended step 1 is
+  "sort into bins" (also fixes the Records grid), then "tap the diagram".
 
 ## Next
 
 - **Records (Help Desk Hotline) and every "label each item" question:** options in a fixed
   order every time (muscle memory), equal-size buttons in a tidy grid. For DNS add records to
   balance the grid (e.g. TXT, NS → 6 = 2 rows of 3). (User, 28 Nov)
-- **Audit fixes: teaches something wrong** (verify each, fix at the owning module, add a test):
-  - Longest Match "Dropped" explanation mentions a default route that isn't in the table.
-  - Port Architect: VM host / AP trunks come up without `switchport mode trunk` (hosts and APs
-    don't speak DTP).
-  - Gateway Guardians: VRRP with equal priority must not preempt (RFC 5798 6.4.2).
-  - Static routes: reject host bits set in the prefix; never install AD 255.
-  - Trunk/phone/channel checks accept a routed port (`no switchport`).
-  - Channel hint says "active + active forms a channel" for a mismatched or shut member.
-  - Any command on a port-channel copies its L2 settings onto members (hides a fault).
-  - Voice VLAN prints the access-VLAN `%` message (no real sample for voice).
-- **Audit fixes: CLI parser**: caret position for `do`; `no ip route NET MASK`; abbreviations
-  after `no`; "not in this level" hidden by the global fallback; `interface range
-  port-channel1 - 2`; cap range size; VLAN 1 rename and 1002-1005; output validator mode `on`
-  and reserved VLANs.
-- **Audit fixes: ambiguous questions**: DHCP-snooping vs DAI trust shown as one flag; RADIUS
-  "open standard" (TACACS+ is RFC 8907 too); Hyper-V on a Windows laptop is type 1; NAT
-  "missing ip nat inside" vs "roles swapped"; "previous link" on replies; "denys"; 2-choice
-  ACL break-fix; Te ports on a C9500-24Y4C; OSPF "different subnets" vs mask mismatch.
+- **Coverage and ambiguity leftovers**: ACL break-fix with only 2 lines to choose from; ETSI
+  channel plans note in Airwaves; AI desk depth; NAT static inside-global collision check.
 
 ## Later
 
@@ -84,6 +69,22 @@ Reusable interaction kinds, then which games use them:
     and review feedback (now one shared `Feedback` panel) and the results list.
   - Topology labels are 20px at every size; layout owner `topology/layout.ts` spreads a
     drawing until no labels cover each other, and wide drawings scroll inside their own box.
+- 28 Nov: **Audit fixes, networking and CLI** (PR below):
+  - VRRP/HSRP: equal priority never preempts (RFC 5798 6.4.2).
+  - Longest Match: "Dropped" explanation names the matching route; destinations are routable
+    unicast.
+  - DTP only with switch peers (VM hosts and APs need `switchport mode trunk`); routed ports are
+    their own mode, so trunk/phone/channel checks reject them.
+  - EtherChannel hint gives the member's real reason; port-channel switchport changes copy to
+    members, other commands don't; one owner for the shared member settings.
+  - Static routes: host bits refused, distance 255 never installed, `no ip route NET MASK`;
+    interfaces refuse network/broadcast addresses. New tests for static routing.
+  - Parser: caret after `do`, abbreviations after `no`, "not in this level" from sub-modes,
+    `interface range port-channel1 - 2`, range cap, VLAN 1 rename and 1002-1005 refused, voice
+    VLAN note instead of an unsampled `%` line, validator covers mode `on`.
+  - Wording: DHCP snooping vs DAI trust shown separately; RADIUS standards wording; VirtualBox
+    lab; NAT "no ip nat command at all"; "next link" on replies; "denies"; C9500-16X; OSPF
+    "subnet or mask mismatch"; RFC 5952 wording; uplink text when the DHCP server is local.
 
 - 28 Nov: **Wire board** (new reusable question kind): Cable Doctor's pinout is now a drag-the-
   wires puzzle on an RJ45 plug. **Drag-and-drop ordering** for every "put in order" question

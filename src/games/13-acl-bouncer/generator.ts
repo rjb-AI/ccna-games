@@ -29,6 +29,8 @@ import {
   evaluateAcl,
   formatAclLines,
 } from '../../core/sim/services'
+
+const ACTION_VERB = { permit: 'permits', deny: 'denies' } as const
 import type { Topology } from '../../core/topology'
 
 export type BouncerKind =
@@ -458,7 +460,7 @@ function builderQuestion(rng: Rng): ChoiceQuestion {
         const pkt = w.bad[0] as Packet
         return [
           text(w.acl),
-          `${w.why} Of ${p.packets.length} test packets it gets ${w.bad.length} wrong, for example ${describePacket(pkt)}: it ${evaluateAcl(w.acl, pkt).action}s, the policy says ${evaluateAcl(p.correct, pkt).action}.`,
+          `${w.why} Of ${p.packets.length} test packets it gets ${w.bad.length} wrong, for example ${describePacket(pkt)}: it ${ACTION_VERB[evaluateAcl(w.acl, pkt).action]}, the policy says ${evaluateAcl(p.correct, pkt).action}.`,
         ]
       }),
     ),

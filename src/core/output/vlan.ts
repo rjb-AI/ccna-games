@@ -9,7 +9,7 @@
  * listed, as on IOS.
  */
 import { shortIfName } from '../cli/ifname'
-import { type DeviceState, operationalMode } from '../device/state'
+import { type DeviceState, isReservedVlan, operationalMode } from '../device/state'
 
 const RESERVED: [number, string][] = [
   [1002, 'fddi-default'],
@@ -44,7 +44,7 @@ export function showVlanBrief(s: DeviceState): string[] {
   ]
   const vlans = Object.keys(s.vlans)
     .map(Number)
-    .filter((v) => v < 1002 || v > 1005)
+    .filter((v) => !isReservedVlan(v))
     .sort((a, b) => a - b)
   for (const v of vlans) {
     const ports = Object.values(s.interfaces)
