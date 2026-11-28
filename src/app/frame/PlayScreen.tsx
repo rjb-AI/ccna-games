@@ -205,6 +205,7 @@ function Play({ game, level, initialSeed, onRestart }: PlayProps) {
           check: pending ? pending.check : null,
           onAnswer,
           hintsAllowed: hints && level.mode === 'learn',
+          mode: level.mode,
         })}
       </div>
 

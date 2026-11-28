@@ -26,13 +26,22 @@ export interface LabelsQuestion {
    * at a time, sorted into a fixed grid of equal-size bins (BinsView). Options are always shown
    * in the order given, so keep that order the same across a level.
    */
-  display?: 'list' | 'bins' | 'diagram'
+  display?: 'list' | 'bins' | 'diagram' | 'swipe'
   /**
    * For display 'diagram': which spot on the first topology visual each item is (a device id or
    * "device:port"), and a short badge code per option ("R" for Root). Tapping a spot cycles it.
    */
   anchors?: Readonly<Record<string, string>>
   codes?: Readonly<Record<string, string>>
+  /**
+   * For display 'swipe' (exactly two options: options[0] is a left swipe, options[1] a right
+   * swipe): why each item gets its answer, shown after each card in Learn.
+   */
+  reasons?: Readonly<Record<string, string>>
+  /** For display 'swipe': the line of the code visual that decides each item (highlighted). */
+  itemLines?: Readonly<Record<string, number>>
+  /** Show item text in the monospace font (addresses, packets). */
+  mono?: boolean
 }
 
 export type LabelsResponse = Readonly<Record<string, string>>

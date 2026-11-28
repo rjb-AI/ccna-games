@@ -1107,3 +1107,167 @@ button.bin-card {
   color: var(--color-bad);
   font-weight: 700;
 }
+
+/* Swipe deck (SwipeView): one card, two big buttons in the thumb zone. */
+.swipe-count {
+  margin: 0 0 4px;
+  color: var(--color-text-muted);
+}
+
+.swipe-stage {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-1);
+  overflow: hidden; /* the card can fly off sideways without widening the page */
+  padding: 8px 0;
+}
+
+.swipe-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 140px;
+  padding: var(--space-2);
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius);
+  background-color: var(--color-surface);
+  box-shadow: 0 6px 0 var(--color-border);
+  transition: transform 0.18s ease-out;
+  touch-action: pan-y; /* horizontal drags swipe; vertical still scrolls */
+  user-select: none;
+  cursor: grab;
+  text-align: center;
+}
+
+.swipe-card.is-left {
+  border-color: var(--color-bad);
+}
+
+.swipe-card.is-right {
+  border-color: var(--color-good);
+}
+
+.swipe-card-text {
+  font-size: var(--font-size-h2);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.swipe-mono {
+  font-family: var(--font-mono);
+}
+
+.swipe-preview {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 700;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius);
+  background-color: var(--color-bg);
+}
+
+.swipe-card.is-left .swipe-preview {
+  color: var(--color-bad);
+}
+
+.swipe-card.is-right .swipe-preview {
+  color: var(--color-good);
+}
+
+.swipe-flash {
+  position: absolute;
+  right: 10px;
+  bottom: 6px;
+  font-size: var(--font-size-h1);
+  font-weight: 700;
+}
+
+.swipe-flash.is-right,
+.swipe-reason.is-right .swipe-reason-title,
+.swipe-results li.is-right span:last-child {
+  color: var(--color-good);
+}
+
+.swipe-flash.is-wrong,
+.swipe-reason.is-wrong .swipe-reason-title,
+.swipe-results li.is-wrong span:last-child {
+  color: var(--color-bad);
+}
+
+.swipe-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
+}
+
+button.swipe-btn {
+  min-height: 64px;
+  font-size: var(--font-size-h2);
+  font-weight: 700;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-border);
+}
+
+button.swipe-btn.is-left {
+  border-color: var(--color-bad);
+}
+
+button.swipe-btn.is-right {
+  border-color: var(--color-good);
+}
+
+.swipe-reason {
+  padding: var(--space-2);
+  margin-bottom: var(--space-1);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+  background-color: var(--color-surface);
+}
+
+.swipe-reason.is-right {
+  border-color: var(--color-good);
+}
+
+.swipe-reason.is-wrong {
+  border-color: var(--color-bad);
+}
+
+.swipe-reason-title {
+  font-weight: 700;
+  font-size: var(--font-size-h2);
+  margin-bottom: 4px;
+}
+
+.swipe-reason p {
+  margin: 0 0 var(--space-1);
+}
+
+.swipe-results {
+  list-style: none;
+  margin: 0 0 var(--space-1);
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.swipe-results li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 var(--space-1);
+  padding: 4px var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swipe-card {
+    transition: none;
+  }
+}

@@ -124,6 +124,8 @@ export function ReviewScreen({ gameId }: { gameId?: string }) {
           check: pending ? pending.check : null,
           onAnswer,
           hintsAllowed: false,
+          // Reviews explain every answer, like Learn.
+          mode: 'learn',
         })}
       </div>
       {pending && (

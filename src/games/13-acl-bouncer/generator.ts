@@ -5,6 +5,7 @@
  */
 import type { ChoiceQuestion } from '../../app/frame/choice'
 import type { FieldsQuestion } from '../../app/frame/fields'
+import type { LabelsQuestion } from '../../app/frame/labels'
 import type { MixedQuestion } from '../../app/frame/mixed'
 import type { CodeVisual } from '../../app/frame/visuals'
 import {
@@ -21,10 +22,10 @@ import { type Rng, stepRng } from '../../core/rng'
 import {
   type Acl,
   type AclEntry,
+  type AclVerdict,
   type Packet,
   WELL_KNOWN,
   describePacket,
-  describeVerdict,
   disagreements,
   evaluateAcl,
   formatAclLines,
@@ -34,7 +35,7 @@ const ACTION_VERB = { permit: 'permits', deny: 'denies' } as const
 import type { Topology } from '../../core/topology'
 
 export type BouncerKind =
-  'standard' | 'extended' | 'wildcard' | 'builder' | 'placement' | 'breakfix'
+  'door-standard' | 'door-extended' | 'wildcard' | 'builder' | 'placement' | 'breakfix'
 export interface BouncerParams {
   kinds: readonly BouncerKind[]
 }
@@ -199,44 +200,61 @@ function interestingPacket(rng: Rng, acl: Acl, c: ReturnType<typeof company>): P
   return fallback
 }
 
-function bouncerQuestion(rng: Rng, kind: 'standard' | 'extended'): ChoiceQuestion {
+/**
+ * The door: a queue of packets meets one ACL; swipe each one permit or deny. Every verdict comes
+ * from core evaluateAcl; packets are picked so different lines (and the implicit deny) decide.
+ */
+function doorQuestion(rng: Rng, kind: 'standard' | 'extended'): LabelsQuestion {
   const c = company(rng)
   const acl = kind === 'standard' ? standardAcl(rng, c) : extendedAcl(rng, c)
-  const p = interestingPacket(rng, acl, c)
-  const v = evaluateAcl(acl, p)
-  const answer = describeVerdict(v)
-  const all = [
-    ...acl.entries.map((e, i) => describeVerdict({ action: e.action, line: i })),
-    describeVerdict({ action: 'deny', line: null }),
-  ]
-  const wrong = rng.shuffle(all.filter((x) => x !== answer)).slice(0, 3)
-  const teamFacts = c.teams.map((t) => ({ label: t.name, value: `${fmt(t.network)}/${t.prefix}` }))
-  const why = (text: string) => {
-    const i = all.indexOf(text)
-    if (i === acl.entries.length)
-      return 'An earlier line matches first, so the implicit deny is never reached.'
-    if (v.line !== null && i > v.line)
-      return `Line ${v.line + 1} already matched. The first match wins, so later lines are never checked.`
-    return `Line ${i + 1} does not match this packet.`
+  const packets: Packet[] = []
+  for (let tries = 0; packets.length < DOOR_QUEUE && tries < 50; tries++) {
+    const p = interestingPacket(rng, acl, c)
+    if (!packets.some((x) => describePacket(x) === describePacket(p))) packets.push(p)
   }
+  const items = packets.map((p, i) => ({ id: `p${i + 1}`, label: describePacket(p) }))
+  const verdicts = packets.map((p) => evaluateAcl(acl, p))
+  const word = (a: 'permit' | 'deny') => (a === 'permit' ? 'Permit' : 'Deny')
   return {
-    prompt: 'A packet reaches the door. What does the ACL do?',
-    facts: [{ label: 'Packet', value: describePacket(p) }, ...teamFacts],
-    visuals: [code(acl, `${kind === 'standard' ? 'Standard' : 'Extended'} ACL ${acl.id}`)],
-    choices: rng.shuffle([answer, ...wrong]),
-    answer,
-    whyWrong: Object.fromEntries(wrong.map((w) => [w, why(w)])),
-    explanation:
-      v.line === null
-        ? `No line matches ${describePacket(p)}, so the implicit "deny any" at the end drops it.`
-        : `Checked top-down: line ${v.line + 1} is the first that matches${kind === 'standard' ? ' the source address (standard ACLs look only at the source)' : ''}, so the packet is ${v.action === 'permit' ? 'permitted' : 'denied'}.`,
+    prompt: 'Packets queue at the door: swipe ← deny or permit →.',
+    facts: c.teams.map((t) => ({ label: t.name, value: `${fmt(t.network)}/${t.prefix}` })),
+    visuals: [
+      code(acl, `${kind === 'standard' ? 'Standard' : 'Extended'} ACL ${acl.id} on the door`),
+    ],
+    items,
+    options: ['Deny', 'Permit'],
+    answers: Object.fromEntries(
+      items.map((it, i) => [it.id, word((verdicts[i] as AclVerdict).action)]),
+    ),
+    display: 'swipe',
+    mono: true,
+    itemLines: Object.fromEntries(
+      items.flatMap((it, i) => {
+        const line = (verdicts[i] as AclVerdict).line
+        return line === null ? [] : [[it.id, line]]
+      }),
+    ),
+    reasons: Object.fromEntries(
+      items.map((it, i) => {
+        const v = verdicts[i] as AclVerdict
+        return [
+          it.id,
+          v.line === null
+            ? 'No line matches, so the implicit "deny any" at the end drops it.'
+            : `Line ${v.line + 1} is the first match${kind === 'standard' ? ' for its source address' : ''}, so it's ${v.action === 'permit' ? 'permitted' : 'denied'}.`,
+        ]
+      }),
+    ),
+    explanation: `ACLs are read top-down and the first matching line decides. ${kind === 'standard' ? 'Standard ACLs look only at the source address.' : 'Extended ACLs check protocol, source, destination and port.'} Anything no line matches is dropped by the implicit deny.`,
     hint:
       kind === 'standard'
-        ? 'Standard ACLs only look at the source. First match wins.'
+        ? 'Only the source address matters. First match wins.'
         : 'Check protocol, source, destination and port, line by line. First match wins.',
-    mono: false,
   }
 }
+
+/** Packets per door question. */
+const DOOR_QUEUE = 5
 
 // ---------- wildcard masks ----------
 
@@ -609,9 +627,10 @@ export function makeQuestion(params: BouncerParams, seed: number, step: number):
   const rng = stepRng(seed, step)
   const kind = rng.pick(params.kinds)
   switch (kind) {
-    case 'standard':
-    case 'extended':
-      return { kind: 'choice', q: bouncerQuestion(rng, kind) }
+    case 'door-standard':
+      return { kind: 'labels', q: doorQuestion(rng, 'standard') }
+    case 'door-extended':
+      return { kind: 'labels', q: doorQuestion(rng, 'extended') }
     case 'wildcard':
       return wildcardQuestion(rng)
     case 'builder':

@@ -75,4 +75,26 @@ describe('ACL Bouncer generator', () => {
       expect(m.q.explanation).toMatch(/test packets go the wrong way/)
     }
   })
+
+  it('the door: 5 different packets, both verdicts over a level, reasons name the line', () => {
+    const seen = new Set<string>()
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const kind of ['door-standard', 'door-extended'] as const) {
+        const m = makeQuestion({ kinds: [kind] }, seed, 0)
+        if (m.kind !== 'labels') throw new Error('labels')
+        expect(m.q.display).toBe('swipe')
+        expect(m.q.options).toEqual(['Deny', 'Permit'])
+        expect(new Set(m.q.items.map((i) => i.label)).size).toBe(m.q.items.length)
+        for (const it of m.q.items) {
+          const a = m.q.answers[it.id] as string
+          seen.add(a)
+          const r = m.q.reasons?.[it.id] ?? ''
+          expect(r).toMatch(
+            a === 'Permit' ? /^Line \d+ .*permitted/ : /^Line \d+ .*denied|implicit/,
+          )
+        }
+      }
+    }
+    expect(seen).toEqual(new Set(['Deny', 'Permit']))
+  })
 })
