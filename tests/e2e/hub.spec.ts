@@ -99,3 +99,12 @@ test('game options: per-game timer, and reset clears only that game', async ({ p
   const card = page.getByRole('article', { name: 'Subnet Sprint' })
   await expect(card.getByRole('link', { name: '▶ Start' })).toBeVisible()
 })
+
+test('a malformed link does not blank the app', async ({ page }) => {
+  await page.goto('./#/game/%')
+  await expect(page.getByRole('heading', { level: 1, name: 'Not found' })).toBeVisible()
+  await page.goto('./#/play/subnet-sprint/basics-24?foo=1')
+  await expect(page.locator('#question-prompt')).toBeVisible()
+  await page.getByRole('link', { name: 'Quit' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Subnet Sprint' })).toBeVisible()
+})

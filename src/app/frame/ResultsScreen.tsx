@@ -3,6 +3,7 @@ import { type LevelDef, type SessionResult, MODE_LABELS } from '../../core/game'
 import { shortLevelTitle, summarizeGame, useProgressMap } from '../gameProgress'
 import { useDueCount } from '../review/queue'
 import { href } from '../router'
+import { Answer } from './Answer'
 import { Stars } from './Stars'
 import type { RegisteredGame } from './types'
 
@@ -65,18 +66,32 @@ export function ResultsScreen({ game, level, result, onRestart }: Props) {
       <p>Pass mark: {level.passScore}%</p>
 
       <h2>What you missed</h2>
-      {result.missed.length === 0 ? (
-        <p>Nothing. Well done.</p>
-      ) : (
-        <ol className="missed">
+      {result.unanswered > 0 && (
+        <p>
+          {result.unanswered} {result.unanswered === 1 ? 'question' : 'questions'} not answered.
+        </p>
+      )}
+      {result.missed.length === 0 && result.unanswered === 0 && <p>Nothing. Well done.</p>}
+      {result.missed.length > 0 && (
+        <ol className="missed" aria-label="Missed questions">
           {result.missed.map((m) => (
             <li key={m.step}>
               <p>
                 <strong>{m.prompt}</strong>
               </p>
-              <p>Your answer: {m.given}</p>
-              <p>Right answer: {m.expected}</p>
-              <p>{m.explanation}</p>
+              {m.unanswered ? (
+                <p>Time ran out before you answered. It is in your reviews.</p>
+              ) : (
+                <>
+                  <p>
+                    Your answer: <Answer text={m.given} />
+                  </p>
+                  <p>
+                    Right answer: <Answer text={m.expected} />
+                  </p>
+                  <p>{m.explanation}</p>
+                </>
+              )}
             </li>
           ))}
         </ol>

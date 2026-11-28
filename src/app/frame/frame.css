@@ -402,6 +402,24 @@ button {
   overflow-wrap: anywhere;
 }
 
+/* A given or expected answer (Answer.tsx): written exactly, lines and indentation kept. */
+.answer-text {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.answer-text.is-block {
+  display: block;
+  margin-top: var(--space-1);
+  padding: var(--space-1);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
 /* Label each item */
 .labels-list {
   list-style: none;

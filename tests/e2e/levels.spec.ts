@@ -12,6 +12,21 @@ async function noSidewaysScroll(page: Page, where: string) {
   expect(overflow, `${where} scrolls sideways`).toBe(false)
 }
 
+/** Every diagram label renders at 20 CSS px or more (theme rule), however wide the drawing. */
+async function diagramTextReadable(page: Page, where: string) {
+  const smallest = await page.evaluate(() => {
+    let min = Infinity
+    for (const svg of document.querySelectorAll<SVGSVGElement>('.topo svg')) {
+      const scale = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width
+      for (const t of svg.querySelectorAll('text')) {
+        min = Math.min(min, parseFloat(t.getAttribute('font-size') ?? '0') * scale)
+      }
+    }
+    return min
+  })
+  expect(smallest, `${where} diagram text in px`).toBeGreaterThanOrEqual(19.9)
+}
+
 test('every level opens and shows a question', async ({ page }) => {
   await page.goto('./')
   await noSidewaysScroll(page, 'hub')
@@ -42,6 +57,7 @@ test('every level opens and shows a question', async ({ page }) => {
     await expect(page.locator('#question-prompt'), href).toBeVisible()
     await expect(page.getByText('Question 1 of'), href).toBeVisible()
     await noSidewaysScroll(page, href)
+    await diagramTextReadable(page, href)
   }
 })
 

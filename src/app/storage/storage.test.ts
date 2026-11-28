@@ -25,6 +25,7 @@ const result = (score: number, stars: SessionResult['stars']): SessionResult => 
   accuracy: score,
   correct: 0,
   answered: 0,
+  unanswered: 5,
   total: 5,
   timeMs: 1000,
   timedOut: false,
