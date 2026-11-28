@@ -226,6 +226,53 @@ export function vlsm(block: Subnet, requests: readonly VlsmRequest[]): VlsmAlloc
   return out
 }
 
+/** Every subnet of `prefix` inside the block, in order: the only legal (aligned) starts. */
+export function alignedSubnets(block: Subnet, prefix: number): IPv4[] {
+  if (prefix < block.prefix || prefix > 32) return []
+  const start = networkOf(block.network, block.prefix)
+  const size = blockSize(prefix)
+  const out: IPv4[] = []
+  for (let n = 0; n < blockSize(block.prefix) / size; n++) out.push((start + n * size) >>> 0)
+  return out
+}
+
+/** Why one subnet in a VLSM plan is wrong. */
+export type VlsmIssue = 'too-small' | 'too-big' | 'misaligned' | 'outside' | 'overlap' | 'missing'
+
+/**
+ * Checks a VLSM plan against the rules: each request gets the smallest subnet that fits, starting
+ * on a boundary of its own size, inside the block, not overlapping another. Any order of the
+ * subnets is accepted (packing biggest first from the start is the model answer, `vlsm`).
+ */
+export function vlsmPlanIssues(
+  block: Subnet,
+  requests: readonly VlsmRequest[],
+  plan: readonly { name: string; network: IPv4; prefix: number }[],
+): Record<string, VlsmIssue[]> {
+  const out: Record<string, VlsmIssue[]> = {}
+  const start = networkOf(block.network, block.prefix)
+  const end = start + blockSize(block.prefix)
+  for (const r of requests) {
+    const issues: VlsmIssue[] = []
+    const s = plan.find((x) => x.name === r.name)
+    if (!s) {
+      out[r.name] = ['missing']
+      continue
+    }
+    const need = prefixForHosts(r.hosts)
+    if (usableHosts(s.prefix) < r.hosts) issues.push('too-small')
+    else if (need !== null && s.prefix < need) issues.push('too-big')
+    if (s.network % blockSize(s.prefix) !== 0) issues.push('misaligned')
+    if (s.network < start || s.network + blockSize(s.prefix) > end) issues.push('outside')
+    const lo = s.network
+    const hi = s.network + blockSize(s.prefix)
+    if (plan.some((o) => o !== s && o.network < hi && lo < o.network + blockSize(o.prefix)))
+      issues.push('overlap')
+    out[r.name] = issues
+  }
+  return out
+}
+
 export function formatSubnet(s: Subnet): string {
   return `${formatIPv4(s.network)}/${s.prefix}`
 }

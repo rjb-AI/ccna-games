@@ -22,7 +22,9 @@ import {
   subnetCount,
   subnetInfo,
   usableHosts,
+  alignedSubnets,
   vlsm,
+  vlsmPlanIssues,
 } from './ipv4'
 
 const RUNS = { numRuns: 10_000 }
@@ -322,5 +324,65 @@ describe('isRoutableUnicast', () => {
       expect(isRoutableUnicast(parseIPv4(a) as number), a).toBe(false)
     for (const a of ['8.8.8.8', '10.1.1.1', '203.0.113.5', '100.64.1.1'])
       expect(isRoutableUnicast(parseIPv4(a) as number), a).toBe(true)
+  })
+})
+
+describe('VLSM plan check', () => {
+  const p = (s: string) => parseIPv4(s) as number
+  const block = { network: p('192.168.10.0'), prefix: 24 }
+  const req = [
+    { name: 'Sales', hosts: 100 },
+    { name: 'HR', hosts: 20 },
+  ]
+
+  it('aligned starts are the subnets of that size in the block', () => {
+    expect(alignedSubnets(block, 26).map(formatIPv4)).toEqual([
+      '192.168.10.0',
+      '192.168.10.64',
+      '192.168.10.128',
+      '192.168.10.192',
+    ])
+    expect(alignedSubnets(block, 23)).toEqual([])
+  })
+
+  it('accepts any legal packing, not only biggest first', () => {
+    const plan = [
+      { name: 'HR', network: p('192.168.10.0'), prefix: 27 },
+      { name: 'Sales', network: p('192.168.10.128'), prefix: 25 },
+    ]
+    expect(vlsmPlanIssues(block, req, plan)).toEqual({ Sales: [], HR: [] })
+  })
+
+  it('names each mistake', () => {
+    const plan = [
+      { name: 'Sales', network: p('192.168.10.64'), prefix: 26 },
+      { name: 'HR', network: p('192.168.10.64'), prefix: 25 },
+    ]
+    expect(vlsmPlanIssues(block, req, plan)).toEqual({
+      Sales: ['too-small', 'overlap'],
+      HR: ['too-big', 'misaligned', 'overlap'],
+    })
+    expect(vlsmPlanIssues(block, req, [])).toEqual({ Sales: ['missing'], HR: ['missing'] })
+    expect(
+      vlsmPlanIssues(
+        block,
+        [{ name: 'X', hosts: 2 }],
+        [{ name: 'X', network: p('192.168.11.0'), prefix: 30 }],
+      ),
+    ).toEqual({ X: ['outside'] })
+  })
+
+  it('the model answer from vlsm always passes the check', () => {
+    fc.assert(
+      fc.property(
+        fc.array(fc.integer({ min: 1, max: 120 }), { minLength: 1, maxLength: 4 }),
+        (hosts) => {
+          const r = hosts.map((h, i) => ({ name: `n${i}`, hosts: h }))
+          const out = vlsm(block, r)
+          if (!out) return
+          for (const v of Object.values(vlsmPlanIssues(block, r, out))) expect(v).toEqual([])
+        },
+      ),
+    )
   })
 })

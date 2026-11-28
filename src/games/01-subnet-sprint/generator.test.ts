@@ -54,6 +54,9 @@ describe('Subnet Sprint generator', () => {
             expect(checkFields(m.q, {}).correct).toBe(false)
           } else if (m.kind === 'choice') {
             expect(checkMixed(m, m.q.answer).correct).toBe(true)
+          } else if (m.kind === 'place') {
+            expect(checkMixed(m, m.q.model).correct).toBe(true)
+            expect(checkMixed(m, {}).correct).toBe(false)
           }
         }),
         { numRuns: 300 },
@@ -130,6 +133,47 @@ describe('Subnet Sprint generator', () => {
       }),
       RUNS,
     )
+  })
+
+  it('VLSM packing: sizes, legal spots and the model follow hand arithmetic', () => {
+    for (const id of ['vlsm-pack', 'vlsm-pack-more']) {
+      const l = LEVELS.find((x) => x.id === id)
+      if (!l) throw new Error(id)
+      fc.assert(
+        fc.property(seed, step, (s, st) => {
+          const m = makeQuestion(l.generatorParams, s, st)
+          if (m.kind !== 'place') throw new Error('place')
+          const q = m.q
+          const [net, bp] = q.board.caption.split(',')[0]?.split('/') as [string, string]
+          const block = Number(bp)
+          const cellAddrs = 2 ** (32 - block) / 16
+          expect(q.board.cells).toHaveLength(16)
+          for (const piece of q.pieces) {
+            const hosts = Number(piece.detail.split(' ')[0])
+            // Smallest prefix with 2^(32-p) - 2 >= hosts.
+            let need = 30
+            while (2 ** (32 - need) - 2 < hosts) need--
+            expect(q.answer[piece.id]).toBe(`${piece.id}:${need}`)
+            for (const v of piece.variants) {
+              const prefix = Number(v.label.slice(1))
+              const addrs = 2 ** (32 - prefix)
+              expect(v.size).toBe(addrs / cellAddrs)
+              // Legal starts: every multiple of the subnet's own size inside the block.
+              const starts = q.anchors[v.id] ?? []
+              expect(starts).toEqual(Array.from({ length: 16 / v.size }, (_, i) => i * v.size))
+              expect(v.note).toMatch(addrs - 2 >= hosts ? /fits$/ : /don't fit$/)
+            }
+          }
+          // The model packs biggest first from the start of the block.
+          const placed = q.pieces
+            .map((pc) => ({ pc, at: Number(q.model[pc.id]?.split('@')[1]) }))
+            .sort((a, b) => a.at - b.at)
+          expect(placed[0]?.at).toBe(0)
+          void net
+        }),
+        { numRuns: 300 },
+      )
+    }
   })
 
   it('Break-Fix: exactly one fault, and it is the answer', () => {

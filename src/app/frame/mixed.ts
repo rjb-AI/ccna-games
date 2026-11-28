@@ -1,5 +1,5 @@
 /**
- * Lets one game mix question kinds (typed fields and multiple choice) in the same level.
+ * Lets one game mix question kinds (typed fields, multiple choice, placement...) in one level.
  * A game's question is `{ kind, q }`; this routes checking, describing and rendering.
  */
 import type { Check } from '../../core/game'
@@ -11,6 +11,7 @@ import { type OrderQuestion, type OrderResponse, checkOrder, describeOrder } fro
 import { type BitsQuestion, checkBits, describeBits } from './bits'
 import { type ExitsQuestion, type ExitsResponse, checkExits, describeExits } from './exits'
 import { type TilesQuestion, type TilesResponse, checkTiles, describeTiles } from './tiles'
+import { type PlaceQuestion, type PlaceResponse, checkPlace, describePlace } from './place'
 import { type TapQuestion, checkTap, describeTap } from './tap'
 import { type WiresQuestion, type WiresResponse, checkWires, describeWires } from './wires'
 
@@ -25,9 +26,17 @@ export type MixedQuestion =
   | { kind: 'bits'; q: BitsQuestion }
   | { kind: 'tiles'; q: TilesQuestion }
   | { kind: 'exits'; q: ExitsQuestion }
+  | { kind: 'place'; q: PlaceQuestion }
 
 export type MixedResponse =
-  number | string | FieldsResponse | LabelsResponse | OrderResponse | CliResponse | WiresResponse
+  | number
+  | string
+  | FieldsResponse
+  | LabelsResponse
+  | OrderResponse
+  | CliResponse
+  | WiresResponse
+  | PlaceResponse
 
 export const isCli = (r: MixedResponse): r is CliResponse =>
   typeof r === 'object' && !Array.isArray(r) && Array.isArray((r as CliResponse).lines)
@@ -58,6 +67,11 @@ export function checkMixed(m: MixedQuestion, r: MixedResponse): Check {
       return checkExits(m.q, Array.isArray(r) ? (r as ExitsResponse) : [])
     case 'tiles':
       return checkTiles(m.q, Array.isArray(r) ? (r as TilesResponse) : [])
+    case 'place':
+      return checkPlace(
+        m.q,
+        typeof r === 'string' || Array.isArray(r) || isCli(r) ? {} : (r as PlaceResponse),
+      )
     case 'wires':
       return checkWires(
         m.q,
@@ -88,6 +102,8 @@ export function describeMixed(m: MixedQuestion): string {
       return describeTiles(m.q)
     case 'exits':
       return describeExits(m.q)
+    case 'place':
+      return describePlace(m.q)
   }
 }
 
@@ -109,6 +125,8 @@ export function rightResponse(m: MixedQuestion): MixedResponse {
       return m.q.answers
     case 'exits':
       return m.q.answer
+    case 'place':
+      return m.q.model
     case 'cli':
       return { lines: m.q.solution }
   }
