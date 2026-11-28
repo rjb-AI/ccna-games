@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Facts } from './Facts'
 import type { OrderQuestion, OrderResponse } from './order'
 import type { QuestionViewProps } from './types'
+import { Prompt } from './Prompt'
 import { Visuals } from './VisualsView'
 
 /** Tap items in order. Tap a placed item to take it back out. */
@@ -13,7 +14,6 @@ export function OrderView({
   hintsAllowed,
 }: QuestionViewProps<OrderQuestion, OrderResponse>) {
   const [seq, setSeq] = useState<string[]>([])
-  const [hintOpen, setHintOpen] = useState(false)
   const answered = response !== null
   const shown = answered ? response : seq
   const remaining = question.items.filter((it) => !shown.includes(it))
@@ -21,22 +21,13 @@ export function OrderView({
 
   return (
     <div className="order-q">
-      <p className="choice-prompt" id="question-prompt">
-        {question.prompt}
-      </p>
+      <Prompt
+        text={question.prompt}
+        hint={question.hint}
+        hintsAllowed={hintsAllowed && !answered}
+      />
       {question.facts && <Facts facts={question.facts} />}
       <Visuals visuals={question.visuals} />
-      {hintsAllowed && question.hint && !answered && (
-        <div className="hint">
-          {hintOpen ? (
-            <p>Hint: {question.hint}</p>
-          ) : (
-            <button type="button" className="btn-secondary" onClick={() => setHintOpen(true)}>
-              Show hint
-            </button>
-          )}
-        </div>
-      )}
 
       <ol className="order-seq" aria-label="Your order">
         {question.answer.map((_, i) => {

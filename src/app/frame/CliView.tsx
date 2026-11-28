@@ -10,6 +10,7 @@ import { promptOf } from '../../core/cli/session'
 import { describeRequirement } from '../../core/device/checks'
 import { type CliQuestion, type CliResponse, runCli } from './cli'
 import type { QuestionViewProps } from './types'
+import { Prompt } from './Prompt'
 import { Visuals } from './VisualsView'
 
 const MAX_CHIPS = 12
@@ -21,7 +22,6 @@ export function CliView(props: QuestionViewProps<CliQuestion, CliResponse>) {
   const [input, setInput] = useState('')
   const [histIdx, setHistIdx] = useState<number | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
-  const [hintOpen, setHintOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const termRef = useRef<HTMLDivElement>(null)
 
@@ -87,9 +87,11 @@ export function CliView(props: QuestionViewProps<CliQuestion, CliResponse>) {
 
   return (
     <div className="cli-q">
-      <p className="choice-prompt" id="question-prompt">
-        {q.prompt}
-      </p>
+      <Prompt
+        text={q.prompt}
+        hint={run.evaluation.problems[0] ?? 'Everything in the work order is done.'}
+        hintsAllowed={hintsAllowed && !answered}
+      />
       <ul className="cli-order" aria-label="Work order">
         {(q.orderText ?? q.requirements.map(describeRequirement)).map((line) => (
           <li key={line}>{line}</li>
@@ -224,17 +226,6 @@ export function CliView(props: QuestionViewProps<CliQuestion, CliResponse>) {
               )}
             </dl>
           )}
-          {hintsAllowed && (
-            <div className="hint">
-              {hintOpen ? (
-                <p>Hint: {run.evaluation.problems[0] ?? 'Everything in the work order is done.'}</p>
-              ) : (
-                <button type="button" className="btn-secondary" onClick={() => setHintOpen(true)}>
-                  Show hint
-                </button>
-              )}
-            </div>
-          )}
           <div className="cli-actions">
             <button type="button" onClick={() => onAnswer({ lines })}>
               Check work order
@@ -244,7 +235,6 @@ export function CliView(props: QuestionViewProps<CliQuestion, CliResponse>) {
               className="btn-secondary"
               onClick={() => {
                 setLines([])
-                setHintOpen(false)
               }}
             >
               Start over

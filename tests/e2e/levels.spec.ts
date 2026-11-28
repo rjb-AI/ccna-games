@@ -51,3 +51,24 @@ test('a multiple-choice question gives feedback with an explanation', async ({ p
   await expect(page.getByRole('status')).toContainText(/Correct|Not quite/)
   await expect(page.locator('.feedback p').nth(1)).not.toBeEmpty()
 })
+
+test('typed-answer questions fit one phone screen without scrolling', async ({ page }) => {
+  // 390x700: an iPhone-size screen with the browser's bars showing.
+  await page.setViewportSize({ width: 390, height: 700 })
+  for (const level of ['basics-24', 'last-octet', 'any-prefix', 'sprint', 'how-many-drill']) {
+    await page.goto(`./#/play/subnet-sprint/${level}?seed=3`)
+    await expect(page.locator('#question-prompt')).toBeVisible()
+    const fits = await page.evaluate(
+      () => document.documentElement.scrollHeight <= window.innerHeight,
+    )
+    expect(fits, `${level} needs scrolling`).toBe(true)
+  }
+})
+
+test('the next question starts at the top', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 600 })
+  await page.goto('./#/play/frame-run/trunk?seed=5')
+  await page.locator('.choice-btn').first().click()
+  await page.getByRole('button', { name: 'Next' }).click()
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
+})
