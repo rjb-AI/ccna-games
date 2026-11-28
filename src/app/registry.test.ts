@@ -19,6 +19,14 @@ describe('registry', () => {
     }
   })
 
+  it('every game has a hub tagline and how-to-play text', () => {
+    for (const g of GAMES) {
+      expect(g.tagline.trim(), g.id).not.toBe('')
+      expect(g.howToPlay.length, g.id).toBeGreaterThan(0)
+      for (const p of g.howToPlay) expect(p.trim(), g.id).not.toBe('')
+    }
+  })
+
   it('every game belongs to a domain', () => {
     const domainIds = DOMAINS.map((d) => d.id)
     for (const g of GAMES) expect(domainIds, g.id).toContain(g.domainId)

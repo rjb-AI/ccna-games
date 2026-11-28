@@ -17,12 +17,60 @@ export interface LevelProgress {
   lastPlayed: number
 }
 
-export interface Settings {
+/** Timer and hints, either app-wide or as one game's override. */
+export interface PlaySettings {
   timer: boolean
   hints: boolean
 }
 
-export const DEFAULT_SETTINGS: Settings = { timer: true, hints: true }
+export interface Settings extends PlaySettings {
+  /** Per-game overrides of timer and hints. A missing field follows the app-wide setting. */
+  perGame: Record<string, Partial<PlaySettings>>
+  /** Domain ids the hub filter hides. */
+  hiddenDomains: string[]
+}
+
+export const DEFAULT_SETTINGS: Settings = {
+  timer: true,
+  hints: true,
+  perGame: {},
+  hiddenDomains: [],
+}
+
+const isObj = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v)
+
+/**
+ * The one reader of stored or imported settings. Anything missing or malformed falls back to the
+ * default, so older saves and backups (before perGame and hiddenDomains existed) still load.
+ */
+export function normalizeSettings(raw: unknown): Settings {
+  const o = isObj(raw) ? raw : {}
+  const perGame: Settings['perGame'] = {}
+  if (isObj(o.perGame)) {
+    for (const [id, v] of Object.entries(o.perGame)) {
+      if (!isObj(v)) continue
+      const entry: Partial<PlaySettings> = {}
+      if (typeof v.timer === 'boolean') entry.timer = v.timer
+      if (typeof v.hints === 'boolean') entry.hints = v.hints
+      if (Object.keys(entry).length) perGame[id] = entry
+    }
+  }
+  return {
+    timer: typeof o.timer === 'boolean' ? o.timer : DEFAULT_SETTINGS.timer,
+    hints: typeof o.hints === 'boolean' ? o.hints : DEFAULT_SETTINGS.hints,
+    perGame,
+    hiddenDomains: Array.isArray(o.hiddenDomains)
+      ? o.hiddenDomains.filter((d): d is string => typeof d === 'string')
+      : [],
+  }
+}
+
+/** The timer and hints a game actually plays with: its override, else the app-wide setting. */
+export function playSettingsFor(settings: Settings, gameId: string): PlaySettings {
+  const o = settings.perGame[gameId] ?? {}
+  return { timer: o.timer ?? settings.timer, hints: o.hints ?? settings.hints }
+}
 
 interface SettingsRow {
   key: 'settings'
@@ -53,7 +101,7 @@ export function progressKey(gameId: string, levelId: string): string {
 
 export async function loadSettings(d: CcnaDb = db): Promise<Settings> {
   const row = await d.settings.get('settings')
-  return { ...DEFAULT_SETTINGS, ...row?.value }
+  return normalizeSettings(row?.value)
 }
 
 export async function saveSettings(settings: Settings, d: CcnaDb = db): Promise<void> {

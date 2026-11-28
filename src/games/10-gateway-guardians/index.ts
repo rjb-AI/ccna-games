@@ -7,6 +7,10 @@ import { LEVELS } from './levels'
 export const gatewayGuardians = defineGame({
   id: 'gateway-guardians',
   title: 'Gateway Guardians',
+  tagline: 'Keep the default gateway alive with HSRP and VRRP',
+  howToPlay: [
+    "From each router's priority and settings, work out which one is active (HSRP) or master (VRRP), recognise the virtual MAC addresses, and predict what happens when a cable is pulled.",
+  ],
   domainId: 'domain-3',
   levels: LEVELS,
   makeQuestion,

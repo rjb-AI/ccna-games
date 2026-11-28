@@ -3,8 +3,10 @@ import { useSyncExternalStore } from 'react'
 
 export type Route =
   | { name: 'hub' }
+  | { name: 'game'; gameId: string }
+  | { name: 'gameOptions'; gameId: string }
   | { name: 'play'; gameId: string; levelId: string; seed?: number }
-  | { name: 'review' }
+  | { name: 'review'; gameId?: string }
   | { name: 'settings' }
 
 export function parseHash(hash: string): Route {
@@ -19,7 +21,15 @@ export function parseHash(hash: string): Route {
       ...(query && Number.isInteger(seed) && seed >= 0 ? { seed } : {}),
     }
   }
-  if (parts[0] === 'review') return { name: 'review' }
+  if (parts[0] === 'game' && parts[1]) {
+    return parts[2] === 'options'
+      ? { name: 'gameOptions', gameId: parts[1] }
+      : { name: 'game', gameId: parts[1] }
+  }
+  if (parts[0] === 'review') {
+    const gameId = new URLSearchParams(query).get('game')
+    return gameId ? { name: 'review', gameId } : { name: 'review' }
+  }
   if (parts[0] === 'settings') return { name: 'settings' }
   return { name: 'hub' }
 }
@@ -28,8 +38,14 @@ export function href(route: Route): string {
   switch (route.name) {
     case 'hub':
       return '#/'
+    case 'game':
+      return `#/game/${encodeURIComponent(route.gameId)}`
+    case 'gameOptions':
+      return `#/game/${encodeURIComponent(route.gameId)}/options`
     case 'review':
-      return '#/review'
+      return route.gameId === undefined
+        ? '#/review'
+        : `#/review?game=${encodeURIComponent(route.gameId)}`
     case 'settings':
       return '#/settings'
     case 'play': {

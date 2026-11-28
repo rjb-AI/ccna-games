@@ -2,7 +2,7 @@
  * Progress export/import as a JSON file. This is the only backup, since there is no cloud sync.
  */
 import type { ReviewCard } from '../../core/srs'
-import { type CcnaDb, type LevelProgress, type Settings, DEFAULT_SETTINGS, db } from './db'
+import { type CcnaDb, type LevelProgress, type Settings, db, normalizeSettings } from './db'
 
 export const BACKUP_APP = 'ccna-games'
 export const BACKUP_VERSION = 1
@@ -30,7 +30,7 @@ export async function exportBackup(now: number, d: CcnaDb = db): Promise<Backup>
     exportedAt: new Date(now).toISOString(),
     progress,
     cards,
-    settings: { ...DEFAULT_SETTINGS, ...settingsRow?.value },
+    settings: normalizeSettings(settingsRow?.value),
   }
 }
 
@@ -119,7 +119,7 @@ export function parseBackup(text: string): Backup {
     exportedAt: isStr(o.exportedAt) ? o.exportedAt : '',
     progress: (o.progress as unknown[]).map(checkProgress),
     cards: (o.cards as unknown[]).map(checkCard),
-    settings: { timer: s.timer as boolean, hints: s.hints as boolean },
+    settings: normalizeSettings(s),
   }
 }
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { type LevelDef, type SessionResult, MODE_LABELS } from '../../core/game'
+import { shortLevelTitle, summarizeGame, useProgressMap } from '../gameProgress'
 import { useDueCount } from '../review/queue'
 import { href } from '../router'
 import { Stars } from './Stars'
@@ -19,6 +20,7 @@ function formatTime(ms: number): string {
 
 export function ResultsScreen({ game, level, result, onRestart }: Props) {
   const due = useDueCount()
+  const next = summarizeGame(game.id, game.levels, useProgressMap()).next
   const headingRef = useRef<HTMLHeadingElement>(null)
   useEffect(() => headingRef.current?.focus(), [])
 
@@ -84,8 +86,16 @@ export function ResultsScreen({ game, level, result, onRestart }: Props) {
         <button type="button" onClick={onRestart}>
           Play again
         </button>
+        {result.passed && next.id !== level.id && (
+          <a className="btn" href={href({ name: 'play', gameId: game.id, levelId: next.id })}>
+            Next level: {shortLevelTitle(next)}
+          </a>
+        )}
         <a className="btn btn-secondary" href={href({ name: 'review' })}>
           Reviews ({due} due)
+        </a>
+        <a className="btn btn-secondary" href={href({ name: 'game', gameId: game.id })}>
+          All levels
         </a>
         <a className="btn btn-secondary" href={href({ name: 'hub' })}>
           Back to hub

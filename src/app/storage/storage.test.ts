@@ -2,8 +2,17 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { SessionResult } from '../../core/game'
 import { cardId } from '../../core/srs'
 import { BackupError, exportBackup, importBackup, parseBackup } from './backup'
-import { type CcnaDb, DEFAULT_SETTINGS, loadSettings, openDb, saveSettings } from './db'
-import { saveMiss, saveResult, saveReview } from './progress'
+import {
+  type CcnaDb,
+  DEFAULT_SETTINGS,
+  type Settings,
+  loadSettings,
+  normalizeSettings,
+  openDb,
+  playSettingsFor,
+  saveSettings,
+} from './db'
+import { resetGame, saveMiss, saveResult, saveReview } from './progress'
 
 const T0 = Date.UTC(2026, 10, 28, 12)
 const src = { gameId: 'demo', levelId: 'learn', seed: 5, step: 2, topics: ['demo'] }
@@ -74,14 +83,69 @@ describe('storage', () => {
 
   it('settings default, then save', async () => {
     expect(await loadSettings(d)).toEqual(DEFAULT_SETTINGS)
-    await saveSettings({ timer: false, hints: true }, d)
-    expect(await loadSettings(d)).toEqual({ timer: false, hints: true })
+    const saved: Settings = {
+      timer: false,
+      hints: true,
+      perGame: { 'subnet-sprint': { timer: true } },
+      hiddenDomains: ['domain-5'],
+    }
+    await saveSettings(saved, d)
+    expect(await loadSettings(d)).toEqual(saved)
+  })
+
+  it('settings saved before per-game options still load', async () => {
+    await d.settings.put({ key: 'settings', value: { timer: false, hints: true } as Settings })
+    expect(await loadSettings(d)).toEqual({ ...DEFAULT_SETTINGS, timer: false })
+  })
+
+  it('malformed settings fall back field by field', () => {
+    expect(
+      normalizeSettings({
+        timer: 'yes',
+        hints: false,
+        perGame: { a: { timer: false, hints: 3 }, b: 'x', c: {} },
+        hiddenDomains: ['domain-1', 7],
+      }),
+    ).toEqual({
+      timer: true,
+      hints: false,
+      perGame: { a: { timer: false } },
+      hiddenDomains: ['domain-1'],
+    })
+    expect(normalizeSettings(null)).toEqual(DEFAULT_SETTINGS)
+  })
+
+  it('a game override wins; a missing field follows the app-wide setting', () => {
+    const s: Settings = {
+      ...DEFAULT_SETTINGS,
+      timer: true,
+      hints: true,
+      perGame: { g: { timer: false } },
+    }
+    expect(playSettingsFor(s, 'g')).toEqual({ timer: false, hints: true })
+    expect(playSettingsFor(s, 'other')).toEqual({ timer: true, hints: true })
+  })
+
+  it('resetting a game clears only that game', async () => {
+    await saveMiss(src, T0, d)
+    await saveResult(result(90, 2), 'learn', T0, d)
+    await saveMiss({ ...src, gameId: 'keep' }, T0, d)
+    await saveResult({ ...result(90, 2), gameId: 'keep' }, 'learn', T0, d)
+    await resetGame('demo', d)
+    expect((await d.cards.toArray()).map((c) => c.gameId)).toEqual(['keep'])
+    expect((await d.progress.toArray()).map((p) => p.gameId)).toEqual(['keep'])
   })
 
   it('export then import restores the same data', async () => {
     await saveMiss(src, T0, d)
     await saveResult(result(90, 2), 'learn', T0, d)
-    await saveSettings({ timer: false, hints: false }, d)
+    const settings: Settings = {
+      timer: false,
+      hints: false,
+      perGame: { demo: { hints: true } },
+      hiddenDomains: ['domain-2'],
+    }
+    await saveSettings(settings, d)
     const text = JSON.stringify(await exportBackup(T0, d))
 
     const other = openDb(`${d.name}-other`)
@@ -89,7 +153,7 @@ describe('storage', () => {
     await importBackup(parseBackup(text), other)
     expect(await other.cards.toArray()).toEqual(await d.cards.toArray())
     expect(await other.progress.toArray()).toEqual(await d.progress.toArray())
-    expect(await loadSettings(other)).toEqual({ timer: false, hints: false })
+    expect(await loadSettings(other)).toEqual(settings)
     await other.delete()
   })
 

@@ -15,6 +15,10 @@ export interface QuestionViewProps<Q, R> {
 export interface GameModule<P, Q, R> extends GameLogic<P, Q, R> {
   id: string
   title: string
+  /** One line under the title on the hub card. */
+  tagline: string
+  /** "How to play" in the game's options: short paragraphs, plain language. */
+  howToPlay: readonly string[]
   /** One of DOMAINS[].id. */
   domainId: string
   levels: readonly LevelDef<P>[]
@@ -24,6 +28,8 @@ export interface GameModule<P, Q, R> extends GameLogic<P, Q, R> {
 export interface RegisteredGame {
   id: string
   title: string
+  tagline: string
+  howToPlay: readonly string[]
   domainId: string
   levels: readonly LevelDef[]
   makeQuestion(level: LevelDef, seed: number, step: number): unknown
@@ -36,6 +42,8 @@ export function defineGame<P, Q, R>(m: GameModule<P, Q, R>): RegisteredGame {
   return {
     id: m.id,
     title: m.title,
+    tagline: m.tagline,
+    howToPlay: m.howToPlay,
     domainId: m.domainId,
     levels: m.levels,
     makeQuestion: (level, seed, step) => m.makeQuestion(level.generatorParams as P, seed, step),

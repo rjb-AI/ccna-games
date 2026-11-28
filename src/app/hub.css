@@ -1,40 +1,22 @@
-/* Hub layout. Jump links scroll with the page: never position fixed or sticky. */
+/* Hub layout. Nothing is fixed or sticky: everything scrolls with the page. */
 .hub {
   max-width: var(--content-max);
   margin: 0 auto;
   padding: var(--space-3) var(--space-2) var(--space-4);
 }
 
-.hub-jump ul {
-  list-style: none;
-  margin: 0 0 var(--space-3);
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.hub-jump a {
-  display: flex;
-  align-items: center;
-  padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background-color: var(--color-surface);
-  text-decoration: none;
-}
-
 .hub-domain {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: var(--space-2);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-4);
   scroll-margin-top: var(--space-2);
+}
+
+.hub-domain h2 {
+  margin-bottom: 0;
 }
 
 .hub-weight {
   color: var(--color-text-muted);
+  margin-top: 4px;
 }
 
 .hub-actions {
@@ -42,11 +24,6 @@
   flex-wrap: wrap;
   gap: var(--space-1);
   margin-bottom: var(--space-3);
-}
-
-.hub-game h3 {
-  font-size: var(--font-size-body);
-  margin: var(--space-2) 0 var(--space-1);
 }
 
 .hub-levels {
@@ -70,4 +47,160 @@
   background-color: var(--color-bg);
   color: var(--color-text);
   text-decoration: none;
+}
+
+/* Domain filter chips. Pressed = shown. */
+.hub-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+button.hub-chip {
+  border-radius: 999px;
+  padding: 4px 14px;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  font-weight: 600;
+}
+
+button.hub-chip[aria-pressed='true'] {
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+  border-color: var(--color-accent);
+}
+
+button.hub-chip[aria-pressed='true']::before {
+  content: '✓ ';
+}
+
+.hub-empty {
+  color: var(--color-text-muted);
+}
+
+/* Game cards: title, progress, and three actions. */
+.hub-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.hub-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.hub-card h3 {
+  font-size: var(--font-size-h2);
+  margin: 0;
+}
+
+.hub-star-total {
+  color: var(--color-star);
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.hub-tagline {
+  color: var(--color-text-muted);
+  margin: var(--space-1) 0;
+}
+
+.hub-passed {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: var(--space-1) 0;
+}
+
+.hub-bar {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.hub-bar > span {
+  display: block;
+  height: 100%;
+  background-color: var(--color-good);
+}
+
+.hub-next {
+  margin: var(--space-1) 0 var(--space-2);
+}
+
+.hub-due {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.hub-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.hub-play {
+  flex: 1 1 auto;
+}
+
+.hub-options {
+  font-size: var(--font-size-h2);
+  min-width: var(--tap-min);
+  padding: 0;
+}
+
+.game-actions {
+  flex-direction: column;
+  margin: var(--space-2) 0 var(--space-3);
+}
+
+.game-no-reviews {
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.hub-level-next {
+  border-color: var(--color-accent);
+}
+
+.hub-next-tag {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* Game options. */
+.options-choice {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin: 0 0 var(--space-2);
+  padding: var(--space-1) var(--space-2);
+}
+
+.options-choice legend {
+  padding: 0 var(--space-1);
+}
+
+.options-modes dt {
+  font-weight: 700;
+  margin-top: var(--space-1);
+}
+
+.options-modes dd {
+  margin: 0;
+}
+
+button.btn-danger {
+  background-color: var(--color-bad-bg);
+  color: var(--color-bad);
+  border: 1px solid var(--color-bad);
 }

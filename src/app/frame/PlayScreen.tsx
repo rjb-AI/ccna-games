@@ -18,7 +18,7 @@ import {
 import { randomSeed } from '../../core/rng'
 import { findGame } from '../registry'
 import { href } from '../router'
-import { useSettings } from '../settingsStore'
+import { useGamePlaySettings } from '../settingsStore'
 import { requestPersistence } from '../storage/db'
 import { saveMiss, saveResult } from '../storage/progress'
 import { ResultsScreen } from './ResultsScreen'
@@ -72,8 +72,7 @@ function formatClock(seconds: number): string {
 }
 
 function Play({ game, level, initialSeed, onRestart }: PlayProps) {
-  const timerOn = useSettings((s) => s.timer)
-  const hints = useSettings((s) => s.hints)
+  const { timer: timerOn, hints } = useGamePlaySettings(game.id)
   const [session, setSession] = useState<Session>(() =>
     startSession(game.id, level, initialSeed ?? randomSeed(), Date.now(), timerOn),
   )
@@ -169,7 +168,7 @@ function Play({ game, level, initialSeed, onRestart }: PlayProps) {
   return (
     <main className="screen">
       <div className="play-top">
-        <a className="btn btn-secondary" href={href({ name: 'hub' })}>
+        <a className="btn btn-secondary" href={href({ name: 'game', gameId: game.id })}>
           Quit
         </a>
         <p className="play-meta">

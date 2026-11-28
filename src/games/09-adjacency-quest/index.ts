@@ -7,6 +7,12 @@ import { LEVELS } from './levels'
 export const adjacencyQuest = defineGame({
   id: 'adjacency-quest',
   title: 'Adjacency Quest',
+  tagline: 'Bring OSPF neighbors to Full',
+  howToPlay: [
+    "Put the OSPF neighbor states in order, work out each router's router ID, and elect the DR and BDR.",
+    'In Break-Fix, find the setting that keeps two neighbors stuck.',
+    'Tap to put items in order, tap a choice, type an IP on the keypad, or label each router.',
+  ],
   domainId: 'domain-3',
   levels: LEVELS,
   makeQuestion,
