@@ -4,8 +4,8 @@ import { DOMAINS } from './domains'
 import type { RegisteredGame } from './frame/types'
 import { Stars } from './frame/Stars'
 import { GAMES } from './registry'
+import { useDueCount } from './review/queue'
 import { href } from './router'
-import { useNow } from './time'
 import { type LevelProgress, db, progressKey } from './storage/db'
 import './frame/frame.css'
 import './hub.css'
@@ -48,8 +48,7 @@ export function Hub() {
     [],
     new Map<string, LevelProgress>(),
   )
-  const now = useNow()
-  const due = useLiveQuery(() => db.cards.where('due').belowOrEqual(now).count(), [now], 0)
+  const due = useDueCount()
   const demo = GAMES.filter((g) => g.domainId === null)
 
   return (

@@ -1,9 +1,7 @@
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useRef } from 'react'
 import { type LevelDef, type SessionResult, MODE_LABELS } from '../../core/game'
+import { useDueCount } from '../review/queue'
 import { href } from '../router'
-import { useNow } from '../time'
-import { db } from '../storage/db'
 import { Stars } from './Stars'
 import type { RegisteredGame } from './types'
 
@@ -20,8 +18,7 @@ function formatTime(ms: number): string {
 }
 
 export function ResultsScreen({ game, level, result, onRestart }: Props) {
-  const now = useNow()
-  const due = useLiveQuery(() => db.cards.where('due').belowOrEqual(now).count(), [now], 0)
+  const due = useDueCount()
   const headingRef = useRef<HTMLHeadingElement>(null)
   useEffect(() => headingRef.current?.focus(), [])
 
