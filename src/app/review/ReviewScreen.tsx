@@ -9,10 +9,10 @@ import { formatDueIn, useNow } from '../time'
 import '../frame/frame.css'
 
 /**
- * One mixed review session across all games. Takes a snapshot of due cards when it opens.
+ * One mixed review session across all games, or one game's cards when `gameId` is given. Takes a snapshot of due cards when it opens.
  * A card answered wrong goes to the back of the queue and is asked again until it is right.
  */
-export function ReviewScreen() {
+export function ReviewScreen({ gameId }: { gameId?: string }) {
   const [queue, setQueue] = useState<ReviewCard[] | null>(null)
   const [nextDue, setNextDue] = useState<number | null>(null)
   const [index, setIndex] = useState(0)
@@ -24,7 +24,7 @@ export function ReviewScreen() {
 
   useEffect(() => {
     let alive = true
-    void loadQueue(Date.now()).then(({ due, nextDue }) => {
+    void loadQueue(Date.now(), undefined, gameId).then(({ due, nextDue }) => {
       if (!alive) return
       setQueue(due.slice(0, SESSION_SIZE))
       setNextDue(nextDue)
@@ -32,7 +32,7 @@ export function ReviewScreen() {
     return () => {
       alive = false
     }
-  }, [])
+  }, [gameId])
 
   useEffect(() => {
     if (pending) nextRef.current?.focus()
@@ -48,12 +48,15 @@ export function ReviewScreen() {
 
   if (queue === null) return <main className="screen" aria-busy="true" />
 
+  const scope = gameId === undefined ? undefined : findGame(gameId)
+  const back = scope ? href({ name: 'game', gameId: scope.id }) : href({ name: 'hub' })
+  const backLabel = scope ? 'Back to levels' : 'Back to hub'
   const header = (
     <div className="play-top">
-      <a className="btn btn-secondary" href={href({ name: 'hub' })}>
-        {card ? 'Quit' : 'Back to hub'}
+      <a className="btn btn-secondary" href={back}>
+        {card ? 'Quit' : backLabel}
       </a>
-      <p className="play-meta">Reviews</p>
+      <p className="play-meta">Reviews{scope ? ` · ${scope.title}` : ''}</p>
     </div>
   )
 

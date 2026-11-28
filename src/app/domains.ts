@@ -6,13 +6,33 @@ export interface Domain {
   id: string
   number: number
   name: string
+  /** Chip label in the hub filter. */
+  short: string
   weight: number
 }
 
 export const DOMAINS: readonly Domain[] = [
-  { id: 'domain-1', number: 1, name: 'Network Infrastructure & Connectivity', weight: 25 },
-  { id: 'domain-2', number: 2, name: 'Switching & Network Access', weight: 25 },
-  { id: 'domain-3', number: 3, name: 'IP Routing', weight: 20 },
-  { id: 'domain-4', number: 4, name: 'Network Services & Security', weight: 20 },
-  { id: 'domain-5', number: 5, name: 'AI and Network Operations & Management', weight: 10 },
+  {
+    id: 'domain-1',
+    number: 1,
+    name: 'Network Infrastructure & Connectivity',
+    short: 'Infrastructure',
+    weight: 25,
+  },
+  { id: 'domain-2', number: 2, name: 'Switching & Network Access', short: 'Switching', weight: 25 },
+  { id: 'domain-3', number: 3, name: 'IP Routing', short: 'Routing', weight: 20 },
+  {
+    id: 'domain-4',
+    number: 4,
+    name: 'Network Services & Security',
+    short: 'Services & Security',
+    weight: 20,
+  },
+  {
+    id: 'domain-5',
+    number: 5,
+    name: 'AI and Network Operations & Management',
+    short: 'Operations & AI',
+    weight: 10,
+  },
 ]

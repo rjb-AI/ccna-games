@@ -60,3 +60,11 @@ export async function saveReview(
     return next
   })
 }
+
+/** "Reset this game": forget one game's stars, scores and review cards. Other games are untouched. */
+export async function resetGame(gameId: string, d: CcnaDb = db): Promise<void> {
+  await d.transaction('rw', [d.progress, d.cards], async () => {
+    await d.progress.where('gameId').equals(gameId).delete()
+    await d.cards.where('gameId').equals(gameId).delete()
+  })
+}

@@ -24,8 +24,15 @@ export function isPlayable(card: ReviewCard): boolean {
   return findGame(card.gameId)?.levels.some((l) => l.id === card.levelId) ?? false
 }
 
-export function snapshotQueue(cards: readonly ReviewCard[], now: number): QueueSnapshot {
-  const playable = cards.filter(isPlayable)
+/** `gameId` limits the queue to one game's cards (the "Review this game" button). */
+export function snapshotQueue(
+  cards: readonly ReviewCard[],
+  now: number,
+  gameId?: string,
+): QueueSnapshot {
+  const playable = cards.filter(
+    (c) => isPlayable(c) && (gameId === undefined || c.gameId === gameId),
+  )
   const upcoming = playable.filter((c) => c.due > now).map((c) => c.due)
   return {
     due: dueCards(playable, now),
@@ -33,12 +40,36 @@ export function snapshotQueue(cards: readonly ReviewCard[], now: number): QueueS
   }
 }
 
-export async function loadQueue(now: number, d: CcnaDb = db): Promise<QueueSnapshot> {
-  return snapshotQueue(await d.cards.toArray(), now)
+export async function loadQueue(
+  now: number,
+  d: CcnaDb = db,
+  gameId?: string,
+): Promise<QueueSnapshot> {
+  return snapshotQueue(await d.cards.toArray(), now, gameId)
 }
 
-/** Live due count. Updates when cards change and as time passes. */
-export function useDueCount(): number {
+export interface DueCounts {
+  total: number
+  byGame: ReadonlyMap<string, number>
+}
+
+/** Due cards per game, from the same snapshot as the total. */
+export function countDue(snapshot: QueueSnapshot): DueCounts {
+  const byGame = new Map<string, number>()
+  for (const c of snapshot.due) byGame.set(c.gameId, (byGame.get(c.gameId) ?? 0) + 1)
+  return { total: snapshot.due.length, byGame }
+}
+
+const NO_DUE: DueCounts = { total: 0, byGame: new Map() }
+
+/** Live due counts. Updates when cards change and as time passes. */
+export function useDueCounts(): DueCounts {
   const now = useNow()
-  return useLiveQuery(async () => (await loadQueue(now)).due.length, [now], 0)
+  return useLiveQuery(async () => countDue(await loadQueue(now)), [now], NO_DUE)
+}
+
+/** Live due count, for all games or one. */
+export function useDueCount(gameId?: string): number {
+  const counts = useDueCounts()
+  return gameId === undefined ? counts.total : (counts.byGame.get(gameId) ?? 0)
 }

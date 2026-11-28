@@ -7,6 +7,11 @@ import { LEVELS } from './levels'
 export const playbookRunner = defineGame({
   id: 'playbook-runner',
   title: 'Playbook Runner',
+  tagline: 'Read and fix Ansible playbooks',
+  howToPlay: [
+    'Choose the right Ansible module, fill the blanks in a playbook, read an inventory, and find the line that breaks the YAML.',
+    'Playbooks are shown as code. Tabs are shown as arrows.',
+  ],
   domainId: 'domain-5',
   levels: LEVELS,
   makeQuestion,

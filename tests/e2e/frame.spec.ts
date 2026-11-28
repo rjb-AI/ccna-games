@@ -29,7 +29,8 @@ test('a miss goes to reviews and progress survives closing the app', async ({ pa
   await page.goto('./')
   await expect(page.getByRole('link', { name: 'Reviews: 0 due' })).toBeVisible()
 
-  await page.getByRole('link', { name: /\/24 warm-up/ }).click()
+  const card = page.getByRole('article', { name: 'Subnet Sprint' })
+  await card.getByRole('link', { name: '▶ Start' }).click()
   const missedFacts = await answer(page, false)
   await expect(page.getByRole('status')).toContainText('Not quite')
   await expect(page.getByRole('status')).toContainText('Added to your reviews')
@@ -49,17 +50,28 @@ test('a miss goes to reviews and progress survives closing the app', async ({ pa
   const again = await context.newPage()
   await again.goto('./')
   await expect(again.getByRole('link', { name: 'Reviews: 1 due' })).toBeVisible()
+  const card2 = again.getByRole('article', { name: 'Subnet Sprint' })
+  await expect(card2.getByRole('img', { name: /^1 of \d+ stars$/ })).toBeVisible()
+  await expect(card2).toContainText('1 of 8 levels passed')
+  await expect(card2).toContainText('1 to review')
+  await expect(card2.getByRole('link', { name: '▶ Continue' })).toBeVisible()
+
+  // The game's own screen: stars per level, and its reviews.
+  await card2.getByRole('link', { name: 'Levels' }).click()
+  await expect(again.getByRole('heading', { level: 1, name: 'Subnet Sprint' })).toBeVisible()
   await expect(
     again.getByRole('link', { name: /\/24 warm-up/ }).getByRole('img', { name: '1 of 3 stars' }),
   ).toBeVisible()
 
   // The missed question comes back, rebuilt from its seed.
-  await again.getByRole('link', { name: 'Reviews: 1 due' }).click()
+  await again.getByRole('link', { name: 'Review this game: 1 due' }).click()
   await expect(again.locator('.facts dd').first()).toHaveText(missedFacts)
   await answer(again, true)
   await expect(again.getByRole('status')).toContainText('Correct')
   await again.getByRole('button', { name: 'Finish' }).click()
   await expect(again.getByRole('heading', { name: 'Review done' })).toBeVisible()
+  await again.getByRole('link', { name: 'Back to levels' }).click()
+  await expect(again.getByText('No reviews due for this game.')).toBeVisible()
   await again.getByRole('link', { name: 'Back to hub' }).click()
   await expect(again.getByRole('link', { name: 'Reviews: 0 due' })).toBeVisible()
 })
