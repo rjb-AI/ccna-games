@@ -41,3 +41,8 @@ How the defense works, why the setting matters, and what breaks when it is wrong
 ## Tests
 
 `generator.test.ts` (including the independent option-truth check), `core/sim/security`.
+
+## Match pairs level (mechanics step 6)
+
+- `match-pairs` (Learn): four attacks, each tapped to the defence that stops it. The attacks are
+  picked so each needs a different defence; pairs come from core `ATTACKS[...].defense`.

@@ -14,6 +14,15 @@ export const LEVELS: readonly LevelDef<DefenderParams>[] = [
     topics: T,
   },
   {
+    id: 'match-pairs',
+    title: 'Learn: match attacks to defences',
+    mode: 'learn',
+    generatorParams: { kinds: ['match-pairs'] },
+    passScore: 60,
+    questionCount: 4,
+    topics: T,
+  },
+  {
     id: 'trust',
     title: 'Learn: trusted and untrusted ports',
     mode: 'learn',

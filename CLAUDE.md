@@ -130,7 +130,9 @@ tests/e2e/                 ← Playwright tests
   optional facts and per-choice "why wrong"), `FieldsView` (typed answers on an on-screen keypad,
   compared by value), `LabelsView` (give every item one of a few options), `OrderView` (put items
   in order, drag-and-drop), `BinsView` (a `LabelsQuestion` with `display: 'bins'`: sort cards
-  into a fixed grid of bins), `WireBoardView` (drag wires onto connectors), `TapView` (answer by
+  into a fixed grid of bins; `'pairs'` for `PairsView`, tap-tap match pairs; `'swipe'` and
+  `'diagram'` too), `TilesView` (code tiles: config lines with blanks filled from a chip bank),
+  `BitsView` (the bit board), `WireBoardView` (drag wires onto connectors), `TapView` (answer by
   tapping a switch or port on a topology), `CliView` (the command line). Mix them in one game
   with `MixedView`. Diagrams must fit a 390px phone (layout.ts decides; `layout.test.ts`
   enforces it): ports become tap-to-read dots before anything scrolls sideways. Any question can show `visuals`: topology

@@ -23,6 +23,15 @@ export const LEVELS: readonly LevelDef<RunnerParams>[] = [
     topics: T,
   },
   {
+    id: 'fill-tiles',
+    title: 'Learn: build the playbook',
+    mode: 'learn',
+    generatorParams: { kinds: ['fill-tiles'] },
+    passScore: 60,
+    questionCount: 3,
+    topics: T,
+  },
+  {
     id: 'yaml',
     title: 'Break-Fix: broken YAML',
     mode: 'breakfix',
