@@ -1,6 +1,7 @@
 import { BinsView } from './BinsView'
 import { ChoiceView } from './ChoiceView'
 import { CliView } from './CliView'
+import { TapView } from './TapView'
 import { WireBoardView } from './WireBoardView'
 import type { WiresResponse } from './wires'
 import { FieldsView } from './FieldsView'
@@ -21,6 +22,11 @@ export function MixedView(props: QuestionViewProps<MixedQuestion, MixedResponse>
         question={m.q}
         response={response !== null && isCli(response) ? response : null}
       />
+    )
+  }
+  if (m.kind === 'tap') {
+    return (
+      <TapView {...rest} question={m.q} response={typeof response === 'string' ? response : null} />
     )
   }
   if (m.kind === 'wires') {

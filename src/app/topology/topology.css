@@ -157,3 +157,69 @@
   font-family: var(--font-mono);
   overflow-wrap: anywhere;
 }
+
+/* Tapping: ports drawn as dots when their names don't fit; invisible 48px hit circles. */
+.topo-dot {
+  fill: var(--color-bg);
+  stroke: var(--color-text-muted);
+}
+
+.topo-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.topo-hit:focus-visible,
+.topo-device[role='button']:focus-visible rect {
+  outline: none;
+  stroke: var(--color-focus);
+  stroke-width: 4px;
+}
+
+.topo-device[role='button'] {
+  cursor: pointer;
+}
+
+/* Pick mode: options are outlined; the pick is bold; after checking, right/wrong. */
+.topo-device.is-option rect {
+  stroke-dasharray: 10 6;
+}
+
+.topo-device.is-picked rect,
+.topo-port.is-picked .topo-ring,
+.topo-port.is-picked .topo-dot {
+  stroke: var(--color-focus);
+  stroke-dasharray: none;
+}
+
+.topo-port.is-option .topo-dot {
+  stroke: var(--color-accent);
+}
+
+.topo-device.is-right rect,
+.topo-port.is-right .topo-ring,
+.topo-port.is-right .topo-dot {
+  stroke: var(--color-good);
+  stroke-dasharray: none;
+}
+
+.topo-device.is-wrong rect,
+.topo-port.is-wrong .topo-ring,
+.topo-port.is-wrong .topo-dot {
+  stroke: var(--color-bad);
+  stroke-dasharray: none;
+}
+
+.topo-info {
+  margin: var(--space-1) 0 0;
+  min-height: 1.5em;
+  text-align: center;
+  font-family: var(--font-mono);
+}
+
+/* Labels never catch taps: the switch, port dot or link under them does. */
+.topo text,
+.topo-ring,
+.topo-dot {
+  pointer-events: none;
+}

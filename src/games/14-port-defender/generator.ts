@@ -66,13 +66,15 @@ const ROLE_TEXT: Record<SnoopPort['role'], string> = {
 function picture(s: Scene, showAttacker: boolean): TopologyVisual {
   const shown = s.ports
   const others = shown.filter((p) => p.name !== 'Gi0/1')
+  // Two columns for a portrait phone: core and switch on the left, user ports on the right.
+  const mid = ((others.length - 1) * 330) / 2
   return {
     kind: 'topology',
     caption: showAttacker ? `The attack comes from ${s.attackerPort}.` : 'Access switch SW1.',
     topology: {
       devices: [
-        { id: 'CORE', kind: 'router', label: 'Core', x: 500, y: 0 },
-        { id: 'SW1', kind: 'switch', label: 'SW1', x: 500, y: 380 },
+        { id: 'CORE', kind: 'router', label: 'Core', x: 0, y: mid - 480 },
+        { id: 'SW1', kind: 'switch', label: 'SW1', x: 0, y: mid },
         ...others.map((p, i) => ({
           id: p.name,
           kind: 'host' as const,
@@ -82,8 +84,8 @@ function picture(s: Scene, showAttacker: boolean): TopologyVisual {
               : p.role === 'attacker' && showAttacker
                 ? 'Attacker'
                 : `PC${p.name.split('/')[1]}`,
-          x: i % 2 === 0 ? 0 : 1000,
-          y: 250 + Math.floor(i / 2) * 260,
+          x: 1000,
+          y: i * 330,
         })),
       ],
       links: [

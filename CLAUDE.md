@@ -129,7 +129,11 @@ tests/e2e/                 ← Playwright tests
 - Question kinds the frame already supports (all in `src/app/frame/`): `ChoiceView` (tap one;
   optional facts and per-choice "why wrong"), `FieldsView` (typed answers on an on-screen keypad,
   compared by value), `LabelsView` (give every item one of a few options), `OrderView` (put items
-  in order). Mix them in one game with `MixedView`. Any question can show `visuals`: topology
+  in order, drag-and-drop), `BinsView` (a `LabelsQuestion` with `display: 'bins'`: sort cards
+  into a fixed grid of bins), `WireBoardView` (drag wires onto connectors), `TapView` (answer by
+  tapping a switch or port on a topology), `CliView` (the command line). Mix them in one game
+  with `MixedView`. Diagrams must fit a 390px phone (layout.ts decides; `layout.test.ts`
+  enforces it): ports become tap-to-read dots before anything scrolls sideways. Any question can show `visuals`: topology
   diagrams (`src/app/topology`), tables, and numbered configuration lines. Build new kinds and
   visuals there so every game can reuse them.
 - Show device settings as tables or configuration lines (input syntax). Never draw something that

@@ -8,6 +8,7 @@ import { type CliQuestion, type CliResponse, checkCli, describeCli } from './cli
 import { type FieldsQuestion, type FieldsResponse, checkFields, describeFields } from './fields'
 import { type LabelsQuestion, type LabelsResponse, checkLabels, describeLabels } from './labels'
 import { type OrderQuestion, type OrderResponse, checkOrder, describeOrder } from './order'
+import { type TapQuestion, checkTap, describeTap } from './tap'
 import { type WiresQuestion, type WiresResponse, checkWires, describeWires } from './wires'
 
 export type MixedQuestion =
@@ -17,6 +18,7 @@ export type MixedQuestion =
   | { kind: 'order'; q: OrderQuestion }
   | { kind: 'cli'; q: CliQuestion }
   | { kind: 'wires'; q: WiresQuestion }
+  | { kind: 'tap'; q: TapQuestion }
 
 export type MixedResponse =
   string | FieldsResponse | LabelsResponse | OrderResponse | CliResponse | WiresResponse
@@ -42,6 +44,8 @@ export function checkMixed(m: MixedQuestion, r: MixedResponse): Check {
       return checkChoice(m.q, typeof r === 'string' ? r : '')
     case 'cli':
       return checkCli(m.q, isCli(r) ? r : { lines: [] })
+    case 'tap':
+      return checkTap(m.q, typeof r === 'string' ? r : '')
     case 'wires':
       return checkWires(
         m.q,
@@ -64,6 +68,8 @@ export function describeMixed(m: MixedQuestion): string {
       return describeCli(m.q)
     case 'wires':
       return describeWires(m.q)
+    case 'tap':
+      return describeTap(m.q)
   }
 }
 
@@ -72,6 +78,7 @@ export function rightResponse(m: MixedQuestion): MixedResponse {
   switch (m.kind) {
     case 'choice':
     case 'order':
+    case 'tap':
       return m.q.answer
     case 'fields':
     case 'labels':

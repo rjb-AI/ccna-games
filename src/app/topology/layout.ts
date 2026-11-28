@@ -19,7 +19,8 @@ export const TEXT_PX = 20
 const MAX_NATURAL_PX = 1400
 /** Rough width of one character per px of font size (bold body font and mono both fit). */
 const CHAR_EM = 0.62
-const BOX_H_PX = 44
+/** Device boxes are tap targets too: 48 px tall. */
+const BOX_H_PX = 48
 /** Port labels sit at least this fraction of the link away from the device centre. */
 const PORT_AT = 0.27
 
@@ -46,6 +47,8 @@ export interface PortMark {
   blocked: boolean
   /** Port name shown (ports on, and not a host; or highlighted). */
   named: boolean
+  /** A port drawn as a dot (its name didn't fit): tap it to read the name. */
+  dot: boolean
 }
 
 export interface LinkGeometry {
@@ -75,7 +78,16 @@ export interface TopoLayout {
   naturalWidth: number
   /** Pairs of labels or boxes that still cover each other at the widest spread (ideally 0). */
   overlaps: number
+  /** The drawing as laid out (devices may be stretched down from the input positions). */
+  topology: TopologyVisual['topology']
+  /** Some port names are dots (tap to read) because all of them didn't fit a phone. */
+  compact: boolean
+  /** Link labels are left off the drawing (tap a port or switch to read them). */
+  linksHidden: boolean
 }
+
+/** Hotspot id for a port: "device:port". */
+export const portId = (ep: Endpoint) => `${ep.device}:${ep.port}`
 
 const same = (a: Endpoint, b: Endpoint) => a.device === b.device && a.port === b.port
 
@@ -104,7 +116,11 @@ const LABEL_AT = [0.5, 0.38, 0.62, 0.3, 0.7] as const
  * Places links, port marks and link labels at scale `u`, and counts pairs of boxes and labels
  * that cover each other. Link labels take the first spot along their link that is free.
  */
-function place(v: TopologyVisual, u: number): { links: LinkGeometry[]; overlaps: number } {
+function place(
+  v: TopologyVisual,
+  u: number,
+  compact = false,
+): { links: LinkGeometry[]; overlaps: number } {
   const t = v.topology
   const notes = v.deviceNotes ?? {}
   const rects: Rect[] = []
@@ -143,27 +159,43 @@ function place(v: TopologyVisual, u: number): { links: LinkGeometry[]; overlaps:
     // Port labels sit outside each device box, along the link, clear of the box.
     const edge = (d: Device) =>
       Math.min((boxPx(d) * u) / 2 / Math.abs(ux || 1e-9), boxH / 2 / Math.abs(uy || 1e-9))
-    const off = (port: string) => ((Math.abs(ux) * textPx(port)) / 2 + Math.abs(uy) * 14 + 8) * u
+    // A highlighted or blocked port has a ring round its name, wider and taller than the text.
+    const ringed = (ep: Endpoint) =>
+      !!v.highlightPorts?.some((p) => same(p, ep)) || !!v.blockedPorts?.some((p) => same(p, ep))
+    const off = (ep: Endpoint) => {
+      const [w, h] = ringed(ep) ? [textPx(ep.port) + 18, RING_H_PX] : [textPx(ep.port), 28]
+      return ((Math.abs(ux) * w) / 2 + (Math.abs(uy) * h) / 2 + 8) * u
+    }
     // Port labels on parallel links are staggered along the link so they do not stack.
-    const dist = (d: Device, port: string) =>
-      Math.max(edge(d) + off(port), len * PORT_AT) + idx * len * 0.12
+    const dist = (d: Device, ep: Endpoint) =>
+      Math.max(edge(d) + off(ep), len * PORT_AT) + idx * len * 0.12
     const mark = (ep: Endpoint, at: Point): PortMark => {
       const hot = v.highlightPorts?.some((p) => same(p, ep)) ?? false
       const onHost = device(t, ep.device).kind === 'host'
-      return {
-        ep,
-        at,
-        hot,
-        blocked: v.blockedPorts?.some((p) => same(p, ep)) ?? false,
-        named: (!!v.showPorts && !onHost) || hot,
-      }
+      const wanted = !!v.showPorts && !onHost
+      const named = (wanted && (!compact || !!v.focusPorts?.includes(ep.device))) || hot
+      const blocked = v.blockedPorts?.some((p) => same(p, ep)) ?? false
+      return { ep, at, hot, blocked, named, dot: wanted && !named }
     }
-    const da = dist(a, l.a.port)
-    const db = dist(b, l.b.port)
-    const ports = [
-      mark(l.a, { x: ax + ux * da, y: ay + uy * da }),
-      mark(l.b, { x: bx - ux * db, y: by - uy * db }),
-    ]
+    // Each port label takes the first spot along its link (stepping away from its device) that
+    // nothing else covers yet, like link labels do.
+    const sizeOf = (p: PortMark): [number, number] =>
+      p.hot || p.blocked ? [ringPx(p), RING_H_PX] : [textPx(p.ep.port), 22]
+    const placePort = (ep: Endpoint, d: Device, sx: number, sy: number, dir: 1 | -1) => {
+      const base = dist(d, ep)
+      const probe = mark(ep, { x: 0, y: 0 })
+      const [w, h] = sizeOf(probe)
+      const steps = [0, 0.08, 0.16, 0.24].map((f) => base + f * len)
+      const spots = steps
+        .filter((s2) => s2 < len / 2 - (w / 2) * u * Math.abs(ux) - 4 * u || s2 === base)
+        .map((s2) => ({ x: sx + dir * ux * s2, y: sy + dir * uy * s2 }))
+      const free =
+        probe.named || probe.hot || probe.blocked
+          ? spots.find((c) => !rects.some((r) => cover(r, rectAt(c, w, h, u))))
+          : undefined
+      return mark(ep, free ?? (spots[0] as Point))
+    }
+    const ports = [placePort(l.a, a, ax, ay, 1), placePort(l.b, b, bx, by, -1)]
     for (const p of ports) {
       if (p.hot || p.blocked) rects.push(rectAt(p.at, ringPx(p), RING_H_PX, u))
       else if (p.named) rects.push(rectAt(p.at, textPx(p.ep.port), 22, u))
@@ -196,30 +228,133 @@ function place(v: TopologyVisual, u: number): { links: LinkGeometry[]; overlaps:
   return { links, overlaps }
 }
 
-export function layoutTopology(v: TopologyVisual): TopoLayout {
-  const t = v.topology
-  const xs = t.devices.map((d) => d.x)
-  const ys = t.devices.map((d) => d.y)
+/** Stretch a drawing vertically (phones are tall): same x, y spread from the centre. */
+function stretchY(v: TopologyVisual, k: number): TopologyVisual {
+  if (k === 1) return v
+  const ys = v.topology.devices.map((d) => d.y)
+  const cy = (Math.min(...ys) + Math.max(...ys)) / 2
+  return {
+    ...v,
+    topology: {
+      ...v.topology,
+      devices: v.topology.devices.map((d) => ({ ...d, y: cy + (d.y - cy) * k })),
+    },
+  }
+}
+
+/** Swap across and down: a wide drawing becomes a tall one. */
+function transpose(v: TopologyVisual): TopologyVisual {
+  return {
+    ...v,
+    topology: { ...v.topology, devices: v.topology.devices.map((d) => ({ ...d, x: d.y, y: d.x })) },
+  }
+}
+
+/** Width of the drawing's own coordinates, and the layout width it is fitted to. */
+function spans(v: TopologyVisual) {
+  const xs = v.topology.devices.map((d) => d.x)
+  const ys = v.topology.devices.map((d) => d.y)
   const spanX = Math.max(...xs) - Math.min(...xs)
   const spanY = Math.max(...ys) - Math.min(...ys)
-  const notePx = Object.keys(v.deviceNotes ?? {}).length ? TEXT_PX * 1.4 : 0
-  const maxBoxPx = Math.max(...t.devices.map(boxPx))
-  // Tall drawings may be up to ~1.8x taller than wide; tiny ones are not blown up.
-  const W0 = Math.max(spanX, spanY * 0.55, 300)
-  const natural = (u: number) => (Math.max(spanX, W0) + (maxBoxPx + 40) * u) / u
+  const maxBoxPx = Math.max(...v.topology.devices.map(boxPx))
+  // A drawing may be up to TALLEST times taller than wide (phones are tall); tiny ones are not
+  // blown up.
+  return { spanX, maxBoxPx, W0: Math.max(spanX, spanY / TALLEST, 300) }
+}
 
-  // Start at the scale that fits a phone, then spread out until nothing covers anything.
-  let u = W0 / Math.max(FIT_PX - maxBoxPx - 40, 120)
-  let { links, overlaps } = place(v, u)
-  for (let next = u * 0.9; overlaps > 0 && natural(next) <= MAX_NATURAL_PX; next *= 0.9) {
-    const p = place(v, next)
-    if (p.overlaps < overlaps) [u, links, overlaps] = [next, p.links, p.overlaps]
+/** Tallest drawing, as a multiple of its width, before it is scaled down to fit. */
+const TALLEST = 2.2
+
+/**
+ * CSS width the drawing needs at scale u. `w0` is the layout width of the drawing before it was
+ * stretched down, so stretching adds height instead of being scaled away.
+ */
+function naturalOf(v: TopologyVisual, u: number, w0?: number): number {
+  const { spanX, maxBoxPx, W0 } = spans(v)
+  return (Math.max(spanX, w0 ?? W0) + (maxBoxPx + 40) * u) / u
+}
+
+/** The scale at which the drawing is exactly a phone's width. */
+function fitScale(v: TopologyVisual): number {
+  const { maxBoxPx, W0 } = spans(v)
+  return W0 / Math.max(FIT_PX - maxBoxPx - 40, 120)
+}
+
+/** How far a drawing may be stretched down before it gets wider instead. */
+const MAX_STRETCH_Y = 2.6
+
+export function layoutTopology(input: TopologyVisual): TopoLayout {
+  const base = input.topology
+  const xs = base.devices.map((d) => d.x)
+  const spanX = Math.max(...xs) - Math.min(...xs)
+  const ys0 = base.devices.map((d) => d.y)
+  const spanY0 = Math.max(...ys0) - Math.min(...ys0)
+  // Tall drawings may be up to ~1.8x taller than wide; tiny ones are not blown up.
+
+  // Start at the scale that fits a phone. Make room for labels by stretching the drawing down
+  // (phones are tall), or by turning a wide drawing on its side; only if neither works, spread it
+  // wider (which makes it scroll).
+  const search = (compact: boolean, input: TopologyVisual) => {
+    // A stretched or turned drawing is only used if it fits a phone with nothing covered.
+    const candidates = spanX > spanY0 ? [input, transpose(input)] : [input]
+    for (const c of candidates) {
+      const cu = fitScale(c)
+      for (let k = 1; k <= MAX_STRETCH_Y + 1e-9; k += 0.1) {
+        const sv = stretchY(c, k)
+        const p = place(sv, cu, compact)
+        const w0 = spans(c).W0
+        if (p.overlaps === 0 && naturalOf(sv, cu, w0) <= FIT_PX + 1)
+          return { v: sv, u: cu, compact, w0, ...p }
+      }
+    }
+    // Otherwise keep the drawing as designed and spread it wider until labels have room.
+    const fitU = fitScale(input)
+    let best = {
+      v: input,
+      u: fitU,
+      compact,
+      w0: spans(input).W0,
+      ...place(input, fitU, compact),
+    }
+    for (
+      let next = best.u * 0.9;
+      best.overlaps > 0 && naturalOf(input, next) <= MAX_NATURAL_PX;
+      next *= 0.9
+    ) {
+      const p = place(input, next, compact)
+      if (p.overlaps < best.overlaps) best = { ...best, u: next, ...p }
+    }
+    return best
   }
+  // Every label on the drawing if that fits a phone. If not, ports become dots; if that still
+  // doesn't fit, link labels move off the drawing too. Both are read by tapping (TopologyView).
+  const fits = (b: { v: TopologyVisual; u: number; w0: number }) =>
+    naturalOf(b.v, b.u, b.w0) <= FIT_PX + 1
+  let best = { ...search(false, input), linksHidden: false }
+  if (!fits(best) && input.showPorts) {
+    const c = search(true, input)
+    if (naturalOf(c.v, c.u, c.w0) < naturalOf(best.v, best.u, best.w0))
+      best = { ...c, linksHidden: false }
+  }
+  if (!fits(best) && input.linkLabels && Object.keys(input.linkLabels).length) {
+    const bare: TopologyVisual = { ...input }
+    delete bare.linkLabels
+    const c = search(!!input.showPorts, bare)
+    if (naturalOf(c.v, c.u, c.w0) < naturalOf(best.v, best.u, best.w0))
+      best = { ...c, linksHidden: true }
+  }
+  const { v, u, links, overlaps, compact, linksHidden, w0 } = best
+  const t = v.topology
+  const natural = (uu: number) => naturalOf(v, uu, w0)
+  const xs2 = t.devices.map((d) => d.x)
+  const ys = t.devices.map((d) => d.y)
+  const spanY = Math.max(...ys) - Math.min(...ys)
+  const notePx = Object.keys(v.deviceNotes ?? {}).length ? TEXT_PX * 1.4 : 0
 
   const boxH = BOX_H_PX * u
   // Narrow (tall) drawings keep the same scale and are centred, instead of being blown up.
   const W = natural(u) * u
-  const minX = (Math.min(...xs) + Math.max(...xs)) / 2 - W / 2
+  const minX = (Math.min(...xs2) + Math.max(...xs2)) / 2 - W / 2
   const minY = Math.min(...ys) - boxH / 2 - 20 * u
   const H = spanY + boxH + notePx * u + 40 * u
   return {
@@ -234,5 +369,8 @@ export function layoutTopology(v: TopologyVisual): TopoLayout {
     H,
     naturalWidth: natural(u),
     overlaps,
+    topology: t,
+    compact,
+    linksHidden,
   }
 }
