@@ -63,7 +63,7 @@ describe('storage', () => {
   it('reviewing a card reschedules it from its latest stored state', async () => {
     const card = await saveMiss(src, T0, d)
     const missed = await saveReview(card.id, false, T0, d)
-    expect(missed?.due).toBe(T0 + 60_000) // wrong: back in 1 minute
+    expect(missed?.due).toBe(T0) // wrong: stays due
     const fixed = await saveReview(card.id, true, T0 + 60_000, d)
     expect(fixed?.reps).toBe(2)
     expect((await d.cards.get(card.id))?.due).toBeGreaterThan(T0 + 60_000)

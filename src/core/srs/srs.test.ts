@@ -26,13 +26,15 @@ describe('core/srs', () => {
     expect(JSON.parse(JSON.stringify(c))).toEqual(c)
   })
 
-  it('a right answer pushes the card later; a wrong one brings it back soon', () => {
+  it('a right answer pushes the card later; a wrong one stays due until answered right', () => {
     const c = newCard(src, T0)
     const good = gradeCard(c, true, T0)
     const again = gradeCard(c, false, T0)
     expect(good.due).toBeGreaterThan(T0)
-    expect(good.due).toBeGreaterThan(again.due)
-    expect(again.due - T0).toBeLessThanOrEqual(10 * MIN)
+    expect(again.due).toBe(T0)
+    expect(isDue(again, T0)).toBe(true)
+    expect(again.reps).toBe(1)
+    expect(good.due - T0).toBeLessThanOrEqual(10 * MIN)
     expect(good.reps).toBe(1)
     expect(good.last_review).toBe(T0)
   })
