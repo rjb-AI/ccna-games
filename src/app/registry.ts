@@ -8,6 +8,9 @@ import { packetPassport } from '../games/12-packet-passport'
 import { aclBouncer } from '../games/13-acl-bouncer'
 import { portDefender } from '../games/14-port-defender'
 import { locksmith } from '../games/15-locksmith'
+import { airwaves } from '../games/16-airwaves'
+import { nocNightShift } from '../games/17-noc-night-shift'
+import { blueprintBuilder } from '../games/19-blueprint-builder'
 
 /** Every playable game. Add new games here. */
 export const GAMES: readonly RegisteredGame[] = [
@@ -20,6 +23,9 @@ export const GAMES: readonly RegisteredGame[] = [
   aclBouncer,
   portDefender,
   locksmith,
+  airwaves,
+  nocNightShift,
+  blueprintBuilder,
 ]
 
 export function findGame(id: string): RegisteredGame | undefined {
