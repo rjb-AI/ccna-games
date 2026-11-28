@@ -8,8 +8,8 @@ of each column.
 
 - **Game-like mechanics, in the MECHANICS.md build order** (user: "do them in the order you
   suggested"). Steps 1-6 done (bins, tap the diagram, labels on the diagram, swipe deck, bit
-  board, match pairs and code tiles). Now: step 7, packet path (part 1 done: be the switch; next:
-  Packet Passport hop-by-hop stamps, then replays for STP, FHRP and ACL); then match pairs and code tiles, packet path, grid placement. Still to
+  board, match pairs and code tiles). Now: step 7, packet path (parts 1-2 done: be the switch, the
+  passport journey; next: replays for STP, FHRP and ACL); then match pairs and code tiles, packet path, grid placement. Still to
   move onto the diagram: Airwaves channels (needs a floor-plan visual), AP ports. Before each: inspiration from `docs/INSPIRATION.md` (user: look up
   games of each type first). Still to move onto tapping: Neighbor Detective (tap the mistake),
   Longest Match rows, ACL/YAML bad line, router ID row.
@@ -63,6 +63,13 @@ Reusable interaction kinds, then which games use them:
 - **Fix the file**: Playbook Runner, tap lines to indent/outdent YAML.
 
 ## Done
+
+- 28 Nov: **Packet path, part 2: the passport journey** (Packet Passport, with and without PAT).
+  Stamp each link of one trip with interface chips; the packet moves on the current link; the
+  passport so far sits under the chips. Systems: code tiles can reuse chips, name blanks and put
+  reference tables below the controls; the trip is drawn as a loop; the diagram's "tap for
+  details" line only shows when something is hidden or after a tap (saves two lines in every
+  game); packets stop short of the far device's name.
 
 - 28 Nov: **Packet path, part 1: be the switch** (mechanics step 7). New kind `exits`
   (`ExitsView`): tap every port a frame leaves by, or "Filter or drop it". It draws as a switch

@@ -33,3 +33,20 @@ test('match pairs: tap one on each side; a wrong pair is marked after checking',
   await page.getByRole('button', { name: 'Check answer' }).click()
   await expect(page.locator('.pair-card.is-right, .pair-card.is-wrong')).toHaveCount(4)
 })
+
+test('passport journey: stamp the first link with interface chips; fits one screen', async ({
+  page,
+}) => {
+  await page.goto('./#/play/packet-passport/journey?seed=4')
+  const chip = (n: string) => page.locator('button.tile-chip', { hasText: new RegExp(`^${n}$`) })
+  // Chips stay in the bank (PC is used twice).
+  for (const n of ['PC', 'R1 Gi0/0', 'PC', 'Server']) await chip(n).click()
+  const check = page.getByRole('button', { name: 'Check answer' })
+  // One screen is the phone goal (390×844); the desktop window is shorter but wider.
+  if (test.info().project.name === 'phone') {
+    const box = await check.boundingBox()
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(page.viewportSize()?.height ?? 0)
+  }
+  await check.click()
+  await expect(page.locator('button.tile-slot.is-right')).toHaveCount(4)
+})
