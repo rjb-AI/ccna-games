@@ -58,3 +58,9 @@ picks this switch. Backup rounds only use scenes where the root was lowered to 2
 every other switch is at 32768, and losing the root leaves one connected network. Allowed:
 `spanning-tree vlan N priority P`, `spanning-tree vlan N root primary|secondary`, configure
 terminal, exit, end, do.
+
+## Cut a link (mechanics step 7)
+
+- `cut` (Learn): a link fails; tap the blocked port that starts forwarding. Afterwards the
+  diagram shows the new tree (core `electStp` without the link, `roleChanges`) with a frame
+  crossing the port that opened. Scenes have up to 5 switches so the drawing fits a phone.

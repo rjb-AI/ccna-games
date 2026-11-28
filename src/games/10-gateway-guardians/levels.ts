@@ -23,6 +23,15 @@ export const LEVELS: readonly LevelDef<GuardParams>[] = [
     topics: T,
   },
   {
+    id: 'plug',
+    title: 'Learn: pull the plug',
+    mode: 'learn',
+    generatorParams: { kinds: ['plug'] },
+    passScore: 60,
+    questionCount: 6,
+    topics: T,
+  },
+  {
     id: 'failover',
     title: 'Break-Fix: pull the cable',
     mode: 'breakfix',

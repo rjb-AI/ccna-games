@@ -42,6 +42,15 @@ export const LEVELS: readonly LevelDef<RootWarsParams>[] = [
     topics: T,
   },
   {
+    id: 'cut',
+    title: 'Learn: cut a link, watch the tree heal',
+    mode: 'learn',
+    generatorParams: { kinds: ['cut-tap'], showCosts: true },
+    passScore: 60,
+    questionCount: 5,
+    topics: T,
+  },
+  {
     id: 'events',
     title: 'Break-Fix: link failures and rogue switches',
     mode: 'breakfix',

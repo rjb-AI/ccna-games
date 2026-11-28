@@ -45,7 +45,7 @@ describe('Adjacency Quest generator', () => {
         const up = t.rows
           .filter((r) => r[2] === 'up')
           .map((r) => ({ name: r[0] as string, ip: ip((r[1] as string).split('/')[0] as string) }))
-        const loops = up.filter((u) => u.name.startsWith('Loopback'))
+        const loops = up.filter((u) => /^Lo(opback)?\d/.test(u.name))
         const pool = loops.length ? loops : up
         const want = manual ? ip(manual[1] as string) : Math.max(...pool.map((u) => u.ip))
         expect(ip(m.q.answers.rid as string)).toBe(want)

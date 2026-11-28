@@ -10,6 +10,7 @@ import type { MixedQuestion } from '../../app/frame/mixed'
 import type { TopologyVisual } from '../../app/frame/visuals'
 import type { OrderQuestion } from '../../app/frame/order'
 import { type IPv4, formatIPv4, parseIPv4 } from '../../core/netmath'
+import { shortIfName } from '../../core/cli'
 import { type Rng, stepRng } from '../../core/rng'
 import {
   type DrRole,
@@ -101,11 +102,11 @@ function routerIdQuestion(rng: Rng): FieldsQuestion {
     visuals: [
       {
         kind: 'table',
-        caption: 'Interfaces (from the device model)',
+        caption: 'Interfaces',
         columns: ['Interface', 'IP address', 'Status'],
         rows: rng
           .shuffle(ifaces)
-          .map((x) => [x.name, `${fmt(x.ip)}/${x.prefix}`, x.up ? 'up' : 'down']),
+          .map((x) => [shortIfName(x.name), `${fmt(x.ip)}/${x.prefix}`, x.up ? 'up' : 'down']),
       },
     ],
     fields: [{ id: 'rid', label: 'Router ID', kind: 'ipv4' }],

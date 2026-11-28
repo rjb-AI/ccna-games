@@ -9,6 +9,11 @@ export interface TapQuestion {
   prompt: string
   /** The diagram to tap. */
   diagram: TopologyVisual
+  /**
+   * What happens next: the diagram after the event, shown in place of `diagram` once answered
+   * (same device and port ids), usually with packets moving (`flows`). Replayable.
+   */
+  after?: TopologyVisual
   /** Other pictures or tables shown under it. */
   visuals?: readonly Visual[]
   /** Device ids, or port ids "device:port", that can be picked. */

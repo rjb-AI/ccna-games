@@ -1,9 +1,9 @@
 import { TopologyView } from '../topology/TopologyView'
 import type { CodeVisual, TableVisual, Visual } from './visuals'
 
-/** Allow line breaks only after dots, commas and slashes (MACs, IPs, VLAN lists). */
+/** Allow line breaks only after dots, colons, commas and slashes (MACs, IPv4 and IPv6, lists). */
 function breakable(text: string) {
-  const parts = text.split(/(?<=[.,/])/)
+  const parts = text.split(/(?<=[.,/:])/)
   return parts.map((p, i) => (
     <span key={i}>
       {p}

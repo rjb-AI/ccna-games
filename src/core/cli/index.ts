@@ -1,2 +1,3 @@
-// Placeholder: core/cli is built in a later milestone. See docs/ccna-games-implementation-plan.md section 5.
-export {}
+// The mini command line. Games import interface-name helpers from here; the parser, modes and
+// command catalogue are imported from their own modules by the CLI frame.
+export { expandIfRange, parseIfName, shortIfName } from './ifname'
