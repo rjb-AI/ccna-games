@@ -11,8 +11,10 @@ Target: CCNA 200-301 **v2.0** only.
 2. **Games never compute answers themselves.** A game calls a `src/core` function to get the right
    answer. No networking math in `src/games/`, no hard-coded answers.
 3. **Never invent Cisco output formats.** Every show-command, syslog or client-output template
-   must match a real sample in `reference/outputs/`. If there is no sample, stop and ask the user
-   for a real one. Do not guess.
+   must match a real sample in `reference/outputs/` (see `reference/outputs/SOURCES.md`). Where
+   that folder has a TextFSM template for the command, generated output must parse with it into
+   the fields the simulator intended. If there is no sample, stop and ask the user for a real
+   one. Do not guess.
 4. **One milestone per pull request.** Do only the milestone asked for (M1, M2, ...; see section
    7 of the implementation plan). Open a PR, and once CI passes merge it yourself with
    `gh pr merge --squash --delete-branch`. Do not wait for the user. Wait for the Pages deploy
@@ -88,7 +90,9 @@ tests/e2e/                 ← Playwright tests
 ## Getting the networking right (section 8)
 
 1. **Real output samples.** Before writing a show-command template, put a real sample in
-   `reference/outputs/` (Cisco documentation, Packet Tracer or CML). If none exists, stop and ask.
+   `reference/outputs/` (Cisco documentation, Packet Tracer or CML, or the real device captures
+   imported from ntc-templates and genieparser by `scripts/import-reference-samples.sh`; add a
+   command to that script's lists rather than copying files by hand). If none exists, stop and ask.
 2. **Worked answers.** STP, OSPF DR/BDR, route lookup and ACLs keep hand-checked reference cases
    in `*.fixtures.json`. The simulator must match them exactly.
 3. **Source every fact.** Explanations that state a fact (port numbers, virtual MAC formats, AD
