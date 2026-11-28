@@ -345,17 +345,11 @@ function visuals(
     {
       kind: 'table',
       caption: 'Hosts',
-      columns: ['Host', 'MAC', 'VLAN', 'Port'],
+      columns: ['Host', 'MAC', 'Where'],
       rows: s.hosts.map((h) => [
         h.id,
         h.mac,
-        String(h.vlan),
-        h.remote
-          ? `via ${h.port}`
-          : s.topology.devices.some((d) => d.id === 'SW2' && d.kind === 'switch') &&
-              s.net.trunks.length
-            ? `${h.switchId} ${h.port}`
-            : h.port,
+        `VLAN ${h.vlan}\n${h.remote ? `via ${h.port}` : s.net.trunks.length ? `${h.switchId} ${h.port}` : h.port}`,
       ]),
     },
     {

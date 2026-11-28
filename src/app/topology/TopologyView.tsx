@@ -17,7 +17,7 @@ export function TopologyView({ v }: { v: TopologyVisual }) {
   // Width of the drawing in layout units, then the unit for text and boxes: about one CSS
   // pixel when the drawing is shown 340 px wide. Margins only leave room for boxes and labels.
   const longest = Math.max(...t.devices.map((d) => d.label.length))
-  const W0 = Math.max(spanX, spanY * 0.85, 300)
+  const W0 = Math.max(spanX, spanY * 0.55, 300) // tall drawings may be up to ~1.8x taller than wide
   const u = W0 / (340 - Math.max(80, longest * 10 + 30) - 40)
   const font = 16 * u
   const small = 13 * u
@@ -27,8 +27,9 @@ export function TopologyView({ v }: { v: TopologyVisual }) {
   const notes = v.deviceNotes ?? {}
   const noteH = Object.keys(notes).length ? small * 1.4 : 0
   const maxBox = Math.max(...t.devices.map(boxW))
-  const W = spanX + maxBox + 40 * u
-  const minX = Math.min(...xs) - maxBox / 2 - 20 * u
+  // Narrow (tall) drawings keep the same scale and are centred, instead of being blown up.
+  const W = Math.max(spanX, W0) + maxBox + 40 * u
+  const minX = (Math.min(...xs) + Math.max(...xs)) / 2 - W / 2
   const minY = Math.min(...ys) - boxH / 2 - 20 * u
   const H = spanY + boxH + noteH + 40 * u
 

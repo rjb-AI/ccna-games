@@ -103,6 +103,7 @@
 
 .qtable td {
   word-break: keep-all;
+  white-space: pre-line;
 }
 
 .qtable th {

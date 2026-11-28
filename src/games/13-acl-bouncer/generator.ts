@@ -477,10 +477,10 @@ function placementQuestion(rng: Rng): ChoiceQuestion {
   const topo: Topology = {
     devices: [
       { id: 'S', kind: 'host', label: src, x: 0, y: 0 },
-      { id: 'R1', kind: 'router', label: 'R1', x: 0, y: 330 },
-      { id: 'R2', kind: 'router', label: 'R2', x: 0, y: 660 },
-      { id: 'R3', kind: 'router', label: 'R3', x: 0, y: 990 },
-      { id: 'D', kind: 'host', label: dst, x: 0, y: 1320 },
+      { id: 'R1', kind: 'router', label: 'R1', x: 0, y: 500 },
+      { id: 'R2', kind: 'router', label: 'R2', x: 0, y: 1000 },
+      { id: 'R3', kind: 'router', label: 'R3', x: 0, y: 1500 },
+      { id: 'D', kind: 'host', label: dst, x: 0, y: 2000 },
     ],
     links: [
       { id: 'a', a: { device: 'S', port: '' }, b: { device: 'R1', port: 'Gi0/0' }, speed: 1000 },

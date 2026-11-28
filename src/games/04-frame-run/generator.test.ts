@@ -59,7 +59,9 @@ describe('Frame Run generator', () => {
             // VLAN of the frame: from the tag, or the arriving port's VLAN.
             const src = fact(q, 'Source').split(' ')[0] as string
             const srcHost = hosts.rows.find((r) => r[1] === src) as readonly string[]
-            const vlan = tag.startsWith('VLAN') ? Number(tag.split(' ')[1]) : Number(srcHost[2])
+            const vlan = tag.startsWith('VLAN')
+              ? Number(tag.split(' ')[1])
+              : Number((srcHost[2] as string).split('\n')[0]?.replace('VLAN ', ''))
             const known = mac.rows.find((r) => r[0] === String(vlan) && r[1] === dst)
             if (dst === 'ffff.ffff.ffff' || !known) expect(q.answer.startsWith('Flood')).toBe(true)
             else if (known[2] === inPort) expect(q.answer.startsWith('Filter')).toBe(true)
