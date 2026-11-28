@@ -22,6 +22,8 @@ const result = (score: number, stars: SessionResult['stars']): SessionResult => 
   passed: stars > 0,
   stars,
   missed: [],
+  points: 0,
+  bestStreak: 0,
 })
 
 let d: CcnaDb

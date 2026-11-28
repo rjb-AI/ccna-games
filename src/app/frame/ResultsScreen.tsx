@@ -54,6 +54,11 @@ export function ResultsScreen({ game, level, result, onRestart }: Props) {
           </dd>
         </div>
       </dl>
+      {level.mode === 'drill' && (
+        <p className="points">
+          {result.points.toLocaleString('en-US')} points · best streak {result.bestStreak}
+        </p>
+      )}
       {result.timedOut && <p>Time ran out. Unanswered questions count as wrong.</p>}
       <p>Pass mark: {level.passScore}%</p>
 

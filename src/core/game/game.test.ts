@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   type Check,
+  currentStreak,
+  streakMultiplier,
   type LevelDef,
   currentStep,
   endSession,
@@ -76,5 +78,20 @@ describe('core/game session', () => {
     expect(starsFor(60, true)).toBe(1)
     expect(starsFor(90, true)).toBe(2)
     expect(starsFor(100, true)).toBe(3)
+  })
+
+  it('streaks: multiplier steps up every 3 right answers, capped at x4', () => {
+    expect([0, 1, 3, 4, 6, 7, 10, 50].map(streakMultiplier)).toEqual([1, 1, 1, 2, 2, 3, 4, 4])
+    expect(currentStreak([right, wrong, right, right])).toBe(2)
+    expect(currentStreak([right, wrong])).toBe(0)
+  })
+
+  it('points: 100 x multiplier per right answer; a miss resets the streak', () => {
+    let s = startSession('g', { ...level, questionCount: 6 }, 1, 0, false)
+    for (const c of [right, right, right, right, wrong, right]) s = recordAnswer(s, 'q', c)
+    const r = scoreSession(endSession(s, 1))
+    // 100 + 100 + 100 + 200 (4th in a row) + 0 + 100
+    expect(r.points).toBe(600)
+    expect(r.bestStreak).toBe(4)
   })
 })

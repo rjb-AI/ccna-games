@@ -1,0 +1,54 @@
+/**
+ * Whole-app checks over every registered game (plan section 8.4 and 9).
+ */
+import { describe, expect, it } from 'vitest'
+import { DOMAINS } from './domains'
+import { GAMES } from './registry'
+import { TOP_LEVEL_TOPICS, isBlueprintTopic, parentTopic } from '../core/game/blueprint'
+
+// Turned on in M11, once every game exists. Until then the test lists what is missing.
+const ENFORCE_FULL_COVERAGE = false
+
+describe('registry', () => {
+  it('game ids and level ids are unique', () => {
+    const ids = GAMES.map((g) => g.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    for (const g of GAMES) {
+      const levelIds = g.levels.map((l) => l.id)
+      expect(new Set(levelIds).size, g.id).toBe(levelIds.length)
+    }
+  })
+
+  it('every game belongs to a domain', () => {
+    const domainIds = DOMAINS.map((d) => d.id)
+    for (const g of GAMES) expect(domainIds, g.id).toContain(g.domainId)
+  })
+
+  it('every level is tagged with real v2.0 blueprint topics', () => {
+    for (const g of GAMES) {
+      for (const l of g.levels) {
+        expect(l.topics.length, `${g.id}/${l.id}`).toBeGreaterThan(0)
+        for (const t of l.topics) expect(isBlueprintTopic(t), `${g.id}/${l.id}: ${t}`).toBe(true)
+      }
+    }
+  })
+
+  it('every level makes a question for every step it asks', () => {
+    for (const g of GAMES) {
+      for (const l of g.levels) {
+        for (let step = 0; step < l.questionCount; step++) {
+          expect(() => g.makeQuestion(l, 12345, step), `${g.id}/${l.id} step ${step}`).not.toThrow()
+        }
+      }
+    }
+  })
+
+  it('v2.0 topic coverage', () => {
+    const covered = new Set(
+      GAMES.flatMap((g) => g.levels.flatMap((l) => l.topics.map(parentTopic))),
+    )
+    const missing = TOP_LEVEL_TOPICS.filter((t) => !covered.has(t))
+    if (ENFORCE_FULL_COVERAGE) expect(missing).toEqual([])
+    else expect(covered.size + missing.length).toBe(TOP_LEVEL_TOPICS.length)
+  })
+})

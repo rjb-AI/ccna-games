@@ -37,6 +37,16 @@ export interface Check {
   /** The right answer, as text. */
   expected: string
   explanation: string
+  /** Multi-part answers: result per part, so the UI can mark each one. */
+  parts?: readonly CheckPart[]
+}
+
+export interface CheckPart {
+  id: string
+  label: string
+  correct: boolean
+  given: string
+  expected: string
 }
 
 /** Everything a game must provide so the frame can run it and rebuild any step for review. */
@@ -83,6 +93,9 @@ export interface SessionResult {
   passed: boolean
   stars: Stars
   missed: StepRecord[]
+  /** Drill points: 100 per right answer times the streak multiplier. */
+  points: number
+  bestStreak: number
 }
 
 export type Stars = 0 | 1 | 2 | 3
@@ -140,6 +153,30 @@ export function starsFor(score: number, passed: boolean): Stars {
   return 1
 }
 
+/** Streak multiplier: x1 for answers 1-3 in a row, x2 for 4-6, x3 for 7-9, x4 from 10. */
+export function streakMultiplier(streak: number): number {
+  return streak <= 0 ? 1 : Math.min(4, 1 + Math.floor((streak - 1) / 3))
+}
+
+/** Right answers in a row at the end of the steps so far. */
+export function currentStreak(steps: readonly Check[]): number {
+  let n = 0
+  for (let i = steps.length - 1; i >= 0 && steps[i]?.correct; i--) n++
+  return n
+}
+
+function streakPoints(steps: readonly Check[]): { points: number; bestStreak: number } {
+  let streak = 0
+  let points = 0
+  let bestStreak = 0
+  for (const s of steps) {
+    streak = s.correct ? streak + 1 : 0
+    bestStreak = Math.max(bestStreak, streak)
+    if (s.correct) points += 100 * streakMultiplier(streak)
+  }
+  return { points, bestStreak }
+}
+
 export function scoreSession(s: Session): SessionResult {
   const correct = s.steps.filter((x) => x.correct).length
   const answered = s.steps.length
@@ -161,5 +198,6 @@ export function scoreSession(s: Session): SessionResult {
     passed,
     stars: starsFor(score, passed),
     missed: s.steps.filter((x) => !x.correct),
+    ...streakPoints(s.steps),
   }
 }

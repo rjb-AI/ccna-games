@@ -120,8 +120,12 @@ tests/e2e/                 ← Playwright tests
   The review screen rebuilds the question from that, so never change a released level's
   generator output for a given seed without a new level id.
 - Every level has `topics` with v2.0 blueprint tags like `v2-1.3`.
-- `src/games/00-demo/` is a throwaway from M1. Delete it (and its registry entry) once real games
-  exist.
+- Question kinds the frame already supports: `ChoiceView` (tap one; optional facts, per-choice
+  "why wrong" text) and `FieldsView` (typed answers with an on-screen keypad, compared by value).
+  Mix them in one game with `MixedView`. Build new kinds in `src/app/frame/` so every game can
+  reuse them.
+- `src/app/registry.test.ts` checks every level: unique ids, real blueprint tags, and that every
+  step generates. `tests/e2e/levels.spec.ts` opens every level at phone and desktop size.
 
 ## Commands
 
