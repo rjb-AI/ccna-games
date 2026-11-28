@@ -6,8 +6,9 @@ of each column.
 
 ## Doing
 
-- **Game-like mechanics, game by game** (see "Mechanics ideas"). Next up: pick the order with
-  the user.
+- **Game-like mechanics, game by game**: full proposal in `docs/MECHANICS.md` (8 reusable kinds,
+  every game, build order). Waiting for the user to pick where to start; recommended step 1 is
+  "sort into bins" (also fixes the Records grid), then "tap the diagram".
 
 ## Next
 
