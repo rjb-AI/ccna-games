@@ -137,7 +137,7 @@ function securityQuestion(rng: Rng): ChoiceQuestion {
       choices: ['WPA3-Personal', 'WPA3-Enterprise', 'WPA2-Enterprise', 'WEP'],
       answer: 'WPA3-Personal',
       explanation:
-        'Personal mode uses one shared password; WPA3-Personal protects it with SAE instead of WPA2’s pre-shared-key handshake.',
+        'Personal mode uses one shared password; WPA3-Personal authenticates with SAE instead of WPA2’s PSK authentication.',
     },
     {
       prompt:
@@ -145,7 +145,7 @@ function securityQuestion(rng: Rng): ChoiceQuestion {
       choices: [
         'WPA2/WPA3-Enterprise (802.1X)',
         'WPA2/WPA3-Personal',
-        'Open with a captive portal',
+        'Open network, no encryption',
         'WEP',
       ],
       answer: 'WPA2/WPA3-Enterprise (802.1X)',
@@ -166,7 +166,7 @@ function securityQuestion(rng: Rng): ChoiceQuestion {
         'A WPA3-only SSID requires SAE. A WPA2-only client can’t do SAE, so it can’t join. WPA3 transition mode lets both kinds of clients join.',
     },
     {
-      prompt: 'What does WPA3-Personal use instead of WPA2’s pre-shared-key handshake?',
+      prompt: 'What does WPA3-Personal use instead of WPA2’s PSK authentication?',
       choices: [
         'SAE (Simultaneous Authentication of Equals)',
         '802.1X with RADIUS',
@@ -174,7 +174,8 @@ function securityQuestion(rng: Rng): ChoiceQuestion {
         'MAC filtering',
       ],
       answer: 'SAE (Simultaneous Authentication of Equals)',
-      explanation: 'SAE resists offline password guessing even if someone captures the handshake.',
+      explanation:
+        'SAE replaces PSK authentication (the 4-way handshake still follows). It resists offline password guessing even if someone captures the exchange.',
     },
   ]
   const q = qs[t] as ChoiceQuestion

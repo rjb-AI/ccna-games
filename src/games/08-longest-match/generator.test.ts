@@ -50,3 +50,28 @@ describe('Longest Match answers', () => {
     )
   })
 })
+
+describe('Longest Match tables are realistic', () => {
+  it('RIP 1–15, static and connected 0', () => {
+    fc.assert(
+      fc.property(fc.nat(), fc.nat(20), (s, st) => {
+        for (const kinds of [['pick-route'], ['installed'], ['breakfix']] as const) {
+          const m = makeQuestion({ kinds }, s, st)
+          for (const v of m.q.visuals ?? []) {
+            if (v.kind !== 'table') continue
+            const src = v.columns.indexOf('Learned by')
+            for (const row of v.rows) {
+              const metricText =
+                row[v.columns.indexOf('AD / metric')] ?? row[v.columns.indexOf('Metric')]
+              const metric = Number((metricText as string).split(' / ').pop())
+              if (row[src] === 'RIP') expect(metric).toBeGreaterThanOrEqual(1)
+              if (row[src] === 'RIP') expect(metric).toBeLessThanOrEqual(15)
+              if (row[src] === 'Static' || row[src] === 'Connected') expect(metric).toBe(0)
+            }
+          }
+        }
+      }),
+      { numRuns: 500 },
+    )
+  })
+})

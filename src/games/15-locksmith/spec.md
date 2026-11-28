@@ -4,14 +4,14 @@ Topics: v2-4.1 (local users, AAA, TACACS+, RADIUS), v2-4.2 (SFTP and SCP), v2-4.
 
 ## Modes and levels
 
-| Level        | Mode      | What's generated                                                                     | Pass | Time  |
-| ------------ | --------- | ------------------------------------------------------------------------------------ | ---- | ----- |
-| `ssh`        | Learn     | Which commands SSH needs; hostname → domain → RSA keys in order                      | 60%  | –     |
-| `aaa`        | Learn     | Sort facts into TACACS+ / RADIUS / both; AAA method-list command with local fallback | 60%  | –     |
-| `files`      | Learn     | Which transfers are encrypted; SCP/SFTP over SSH; TFTP has no login                  | 60%  | –     |
-| `vpn`        | Learn     | Tunnel vs transport, ESP vs AH, IKE, site-to-site vs remote access                   | 60%  | –     |
-| `keys-drill` | Drill     | Mix                                                                                  | 70%  | 200 s |
-| `breakfix`   | Break-Fix | SSH logins fail; commands shown; pick the root cause                                 | 60%  | –     |
+| Level        | Mode      | What's generated                                                                              | Pass | Time  |
+| ------------ | --------- | --------------------------------------------------------------------------------------------- | ---- | ----- |
+| `ssh`        | Learn     | Which commands SSH-only access needs; what must come after hostname and domain (the RSA keys) | 60%  | –     |
+| `aaa`        | Learn     | Sort facts into TACACS+ / RADIUS / both; AAA method-list command with local fallback          | 60%  | –     |
+| `files`      | Learn     | Which transfers are encrypted; SCP/SFTP over SSH; TFTP has no login                           | 60%  | –     |
+| `vpn`        | Learn     | Tunnel vs transport, ESP vs AH, IKE, site-to-site vs remote access                            | 60%  | –     |
+| `keys-drill` | Drill     | Mix                                                                                           | 70%  | 200 s |
+| `breakfix`   | Break-Fix | SSH logins fail; commands shown; pick the root cause                                          | 60%  | –     |
 
 Password policy and the security-program add-on are dropped for v2.0 (plan section 6).
 

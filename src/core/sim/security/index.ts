@@ -34,7 +34,7 @@ export const ATTACKS: Record<Attack, { label: string; what: string; defense: Def
   },
   'broadcast-storm': {
     label: 'Broadcast storm',
-    what: 'A faulty NIC or a loop floods the network with broadcasts.',
+    what: 'A faulty NIC floods the network with broadcasts.',
     defense: 'storm-control',
   },
   'rogue-ra': {
@@ -72,7 +72,7 @@ export const DEFENSES: Record<Defense, { label: string; how: string }> = {
   },
   'bpdu-guard': {
     label: 'BPDU guard',
-    how: 'Err-disables a PortFast port as soon as a BPDU arrives on it.',
+    how: 'Err-disables a port as soon as a BPDU arrives on it. Usually turned on for PortFast edge ports (or globally for all of them).',
   },
 }
 

@@ -17,7 +17,6 @@
 import type { ChoiceQuestion } from '../../app/frame/choice'
 import type { LabelsQuestion } from '../../app/frame/labels'
 import type { MixedQuestion } from '../../app/frame/mixed'
-import type { OrderQuestion } from '../../app/frame/order'
 import { SSH_GAPS, type SshConfig, type SshGap, sshConfigLines, sshGaps } from '../../core/device'
 import { type Rng, stepRng } from '../../core/rng'
 
@@ -106,18 +105,25 @@ function sshNeeded(rng: Rng): LabelsQuestion {
   }
 }
 
-function sshOrder(rng: Rng): OrderQuestion {
-  const answer = [
+function sshOrder(rng: Rng): ChoiceQuestion {
+  const choices = [
+    'crypto key generate rsa modulus 2048',
     'hostname BRANCH-R1',
     'ip domain-name corp.example',
-    'crypto key generate rsa modulus 2048',
+    'username admin secret ********',
   ]
   return {
-    prompt: 'These three must be done in order before SSH can work. Put them in order.',
-    items: rng.shuffle(answer),
-    answer,
+    prompt: 'Which of these has to come after setting the hostname and the domain name?',
+    choices: rng.shuffle(choices),
+    answer: 'crypto key generate rsa modulus 2048',
+    whyWrong: {
+      'hostname BRANCH-R1': 'The hostname is one of the two things the key needs first.',
+      'ip domain-name corp.example':
+        'The domain name is one of the two things the key needs first (hostname and domain can be set in either order).',
+      'username admin secret ********': 'A local user can be created at any time.',
+    },
     explanation:
-      'The RSA key pair is named hostname.domain-name, so IOS needs a non-default hostname and a domain name before it will generate the keys.',
+      'The RSA key pair is named hostname.domain-name, so IOS needs a non-default hostname and a domain name before it will generate the keys. The hostname and domain name can be set in either order.',
     hint: 'What is the key named after?',
   }
 }
@@ -337,7 +343,7 @@ export function makeQuestion(params: LockParams, seed: number, step: number): Mi
     case 'ssh-needed':
       return { kind: 'labels', q: sshNeeded(rng) }
     case 'ssh-order':
-      return { kind: 'order', q: sshOrder(rng) }
+      return { kind: 'choice', q: sshOrder(rng) }
     case 'ssh-breakfix':
       return { kind: 'choice', q: sshBreakfix(rng) }
     case 'aaa-sort':

@@ -358,7 +358,7 @@ function guardQuestion(rng: Rng): ChoiceQuestion {
       prompt: `A PC on ${access} port ${port} waits about 30 seconds for network access after boot. Which feature lets the port forward straight away?`,
       answer: 'portfast',
       explanation:
-        'PortFast makes an edge port go straight to forwarding instead of waiting through the listening and learning stages. Use it only on ports to end devices.',
+        'PortFast makes an edge port go straight to forwarding instead of waiting before it forwards (the discarding and learning stages). Use it only on ports to end devices.',
       why: {
         bpduguard: 'BPDU guard shuts a port down if a BPDU arrives; it does not speed anything up.',
         rootguard:

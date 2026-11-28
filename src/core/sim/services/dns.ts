@@ -54,7 +54,8 @@ export const DNS_PROBLEMS: Record<DnsProblem, { label: string; explain: string }
   },
   'no-mx': {
     label: 'There is no MX record for the domain',
-    explain: 'Mail servers look up the MX record to know where to deliver mail for the domain.',
+    explain:
+      'Senders look up the MX record to find the domain’s mail server. With no MX they fall back to an A/AAAA record for the domain itself (RFC 5321 5.1), and this domain has none.',
   },
   'missing-ptr': {
     label: 'No PTR record for the address',
