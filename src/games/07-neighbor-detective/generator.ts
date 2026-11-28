@@ -47,7 +47,7 @@ function actualNetwork(rng: Rng): Topology {
     links.push({
       id: `u${i}`,
       a: { device: 'core', port: `Te1/0/${i + 1}` },
-      b: { device: id, port: `Gi1/1/${rng.int(1, 2)}` },
+      b: { device: id, port: `Te1/1/${rng.int(1, 2)}` },
       speed: 10000,
     })
   }
@@ -115,7 +115,7 @@ function plant(
         {
           id: 'x',
           a: { device: host.id, port },
-          b: { device: 'rogue', port: 'Gi1/1/1' },
+          b: { device: 'rogue', port: 'Te1/1/1' },
           speed: 1000,
         },
       ],

@@ -85,11 +85,7 @@ export const RF_OBJECTS: readonly { object: string; effect: RfEffect; note: stri
     effect: 'scattering',
     note: 'Uneven surfaces and particles scatter the signal in many directions.',
   },
-  {
-    object: 'A thick glass window',
-    effect: 'refraction',
-    note: 'Passing into a denser material bends the signal’s direction.',
-  },
+
   {
     object: 'A microwave oven in use',
     effect: 'interference',
@@ -140,7 +136,7 @@ export const WIFI_SECURITY: Record<WifiSecurity, { auth: string; keyExchange: st
   'WPA2-Personal': { auth: 'Pre-shared key (PSK)', keyExchange: 'PSK four-way handshake' },
   'WPA3-Personal': {
     auth: 'Password with SAE',
-    keyExchange: 'SAE (Simultaneous Authentication of Equals)',
+    keyExchange: 'SAE, then the 4-way handshake',
   },
   'WPA2-Enterprise': {
     auth: '802.1X with a RADIUS server',

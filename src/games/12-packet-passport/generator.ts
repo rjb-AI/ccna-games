@@ -71,9 +71,11 @@ interface World {
 /** PC (private LAN) - R1 - R2 - server. R1 is the edge router. */
 function world(rng: Rng, withNat: boolean): World {
   const lan = `192.168.${rng.int(0, 254)}`
-  const wan = rng.pick(['203.0.113', '198.51.100'])
   const wanBase = rng.int(0, 63) * 4
-  const srvNet = rng.pick(['8.20.10', '93.184.216', '45.33.12'])
+  // Without NAT, the path is a private company WAN (RFC 1918), since private addresses are not
+  // routed on the Internet. With NAT, the outside uses documentation ranges (RFC 5737).
+  const wan = withNat ? rng.pick(['203.0.113', '198.51.100']) : `10.255.${rng.int(0, 255)}`
+  const srvNet = withNat ? '192.0.2' : `172.16.${rng.int(0, 255)}`
   const pc: Nic = {
     device: 'PC',
     name: 'eth0',
@@ -461,7 +463,7 @@ function natConfigQuestion(rng: Rng): ChoiceQuestion {
       answer,
       whyWrong: {
         [choices[1] as string]:
-          'Without overload, only one inside host at a time can use that single address.',
+          'Without overload this is dynamic NAT to one address, so only one inside host at a time could use it. (Some IOS versions add overload by themselves with the interface form, but write it.)',
         [choices[2] as string]: 'Static NAT maps one host to one address.',
         [choices[3] as string]: 'The LAN is inside, so it is "inside source".',
       },

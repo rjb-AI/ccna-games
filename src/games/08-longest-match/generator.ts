@@ -12,6 +12,7 @@ import { type IPv4, formatIPv4, networkOf, prefixToMask } from '../../core/netma
 import { type Rng, stepRng } from '../../core/rng'
 import {
   DEFAULT_AD,
+  METRIC_RANGE,
   type Route,
   type RouteSource,
   SOURCE_LABEL,
@@ -26,6 +27,9 @@ export interface MatchParams {
 }
 
 const fmt = formatIPv4
+/** A metric that is realistic for the protocol (RIP 1–15, static 0, EIGRP thousands...). */
+const metric = (rng: Rng, s: RouteSource) => rng.int(...METRIC_RANGE[s])
+
 const nh = (rng: Rng) => ((10 << 24) | (rng.int(0, 255) << 8) | rng.int(1, 254)) >>> 0
 
 function route(
@@ -95,7 +99,8 @@ function buildTable(rng: Rng): Route[] {
     )
   }
   if (rng.chance(0.4)) r.shift() // sometimes there is no default route
-  return rng.shuffle(r)
+  // Realistic metrics for each protocol (static 0, RIP 1–15, EIGRP thousands...).
+  return rng.shuffle(r.map((x) => ({ ...x, metric: metric(rng, x.source) })))
 }
 
 function pickRoute(rng: Rng): ChoiceQuestion {
@@ -147,26 +152,18 @@ function installedQuestion(rng: Rng): ChoiceQuestion {
   let offers: Route[]
   if (sameProto) {
     const p = rng.pick(['ospf', 'eigrp', 'rip'] as const)
-    const m = rng.int(2, 200)
+    const m = metric(rng, p)
+    let m2 = metric(rng, p)
+    while (m2 === m) m2 = metric(rng, p)
     const hop = nh(rng)
-    offers = [
-      route(net, 16, p, m, hop, 'Gi0/1'),
-      route(net, 16, p, m + rng.int(1, 60), (hop + 256) >>> 0, 'Gi0/2'),
-    ]
+    offers = [route(net, 16, p, m, hop, 'Gi0/1'), route(net, 16, p, m2, (hop + 256) >>> 0, 'Gi0/2')]
   } else {
     const sources = rng
       .shuffle(['static', 'ebgp', 'eigrp', 'ospf', 'rip', 'ibgp'] as RouteSource[])
       .slice(0, rng.int(2, 3))
     const hop = nh(rng)
     offers = sources.map((s, i) =>
-      route(
-        net,
-        16,
-        s,
-        s === 'static' ? 0 : rng.int(2, 5000),
-        (hop + 256 * i) >>> 0,
-        `Gi0/${i + 1}`,
-      ),
+      route(net, 16, s, metric(rng, s), (hop + 256 * i) >>> 0, `Gi0/${i + 1}`),
     )
   }
   const best = installRoutes(offers)[0] as Route
@@ -324,7 +321,7 @@ function floatingQuestion(rng: Rng): ChoiceQuestion {
   const viaOspf = nh(rng)
   const viaBackup = nh(rng)
   const floatAd = rng.pick([1, 115, 130, 200, 254, 100])
-  const ospf = route(net, 16, 'ospf', rng.int(2, 100), viaOspf, 'Gi0/1')
+  const ospf = route(net, 16, 'ospf', metric(rng, 'ospf'), viaOspf, 'Gi0/1')
   const stat = route(net, 16, 'static', 0, viaBackup, 'Gi0/2', floatAd)
   const failed = rng.chance(0.5)
   const offers = failed ? [stat] : [ospf, stat]

@@ -117,11 +117,11 @@ function fiber(rng: Rng): ChoiceQuestion {
     },
     {
       prompt:
-        'What is the maximum length of a twisted-pair Ethernet run (for example Cat6) between a switch and a PC?',
+        'What is the maximum length of a twisted-pair Ethernet run (for example Cat5e or Cat6a) between a switch and a PC?',
       choices: ['100 m', '500 m', '10 m', '2 km'],
       answer: '100 m',
       explanation:
-        'Twisted-pair Ethernet (10BASE-T up to 10GBASE-T) is specified for up to 100 m per run.',
+        'Twisted-pair Ethernet is specified for up to 100 m per run. (10GBASE-T needs Cat6a for the full 100 m; on Cat6 it reaches about 55 m.)',
     },
     {
       prompt:
@@ -171,7 +171,14 @@ const SYMPTOMS: { text: string; answer: string; why: string }[] = [
 
 function symptom(rng: Rng): ChoiceQuestion {
   const s = rng.pick(SYMPTOMS)
-  const others = rng.shuffle(SYMPTOMS.filter((x) => x.answer !== s.answer)).slice(0, 3)
+  // A hub on a full-duplex port is itself a duplex mismatch, so never offer that next to runts.
+  const others = rng
+    .shuffle(
+      SYMPTOMS.filter(
+        (x) => x.answer !== s.answer && !(s.text.includes('hub') && x.answer === 'Duplex mismatch'),
+      ),
+    )
+    .slice(0, 3)
   return {
     prompt: 'What is the most likely cause?',
     facts: [{ label: 'Patient', value: s.text, prose: true }],

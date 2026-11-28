@@ -86,3 +86,20 @@ export function staticRouteCommand(
 ): string {
   return `ip route ${formatIPv4(network)} ${formatIPv4(prefixMask)} ${formatIPv4(nextHop)}${ad ? ` ${ad}` : ''}`
 }
+
+/**
+ * Realistic metric ranges, so generated tables never show impossible values. RIP: hop count
+ * 1-15, 16 = unreachable (RFC 2453 3.6). Connected and static routes have metric 0. OSPF cost is
+ * a 16-bit sum per link. EIGRP composite metrics are large (for example 2816, 28160, 3072).
+ */
+export const METRIC_RANGE: Record<RouteSource, readonly [number, number]> = {
+  connected: [0, 0],
+  static: [0, 0],
+  ebgp: [0, 0],
+  ibgp: [0, 0],
+  rip: [1, 15],
+  ospf: [2, 200],
+  isis: [10, 200],
+  eigrp: [2816, 3_500_000],
+  'eigrp-external': [2816, 3_500_000],
+}
