@@ -4,6 +4,7 @@
  */
 import type { Check, CheckPart } from '../../core/game'
 import { parseIPv4 } from '../../core/netmath'
+import type { Visual } from './visuals'
 
 export type FieldKind = 'ipv4' | 'number' | 'prefix'
 
@@ -21,6 +22,7 @@ export interface Fact {
 export interface FieldsQuestion {
   prompt: string
   facts: readonly Fact[]
+  visuals?: readonly Visual[]
   fields: readonly Field[]
   /** Right answer per field id, as display text. Produced by core functions in the generator. */
   answers: Readonly<Record<string, string>>

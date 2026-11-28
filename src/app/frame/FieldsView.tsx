@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Facts } from './Facts'
 import { type FieldsQuestion, type FieldsResponse, KEYS, applyKey, invalidReason } from './fields'
 import type { QuestionViewProps } from './types'
+import { Visuals } from './VisualsView'
 
 /**
  * Several typed answers entered with an on-screen keypad (phone) or the keyboard (desktop).
@@ -83,6 +84,7 @@ export function FieldsView({
         {question.prompt}
       </p>
       <Facts facts={question.facts} />
+      <Visuals visuals={question.visuals} />
       {hintsAllowed && question.hint && !answered && (
         <div className="hint">
           {hintOpen ? (
