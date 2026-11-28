@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Check } from '../../core/game'
-import { type ReviewCard, dueCards } from '../../core/srs'
+import type { ReviewCard } from '../../core/srs'
 import { findGame } from '../registry'
 import { href } from '../router'
-import { db } from '../storage/db'
+import { SESSION_SIZE, loadQueue } from './queue'
 import { saveReview } from '../storage/progress'
 import { formatDueIn, useNow } from '../time'
 import '../frame/frame.css'
-
-const SESSION_SIZE = 20
 
 /**
  * One mixed review session across all games. Takes a snapshot of due cards when it opens.
@@ -26,14 +24,10 @@ export function ReviewScreen() {
 
   useEffect(() => {
     let alive = true
-    void db.cards.toArray().then((all) => {
+    void loadQueue(Date.now()).then(({ due, nextDue }) => {
       if (!alive) return
-      const t = Date.now()
-      // Skip cards whose game or level no longer exists.
-      const playable = all.filter((c) => findGame(c.gameId)?.levels.some((l) => l.id === c.levelId))
-      setQueue(dueCards(playable, t, SESSION_SIZE))
-      const upcoming = playable.filter((c) => c.due > t).map((c) => c.due)
-      setNextDue(upcoming.length ? Math.min(...upcoming) : null)
+      setQueue(due.slice(0, SESSION_SIZE))
+      setNextDue(nextDue)
     })
     return () => {
       alive = false

@@ -18,7 +18,11 @@ Target: CCNA 200-301 **v2.0** only.
    `gh pr merge --squash --delete-branch`. Do not wait for the user. Wait for the Pages deploy
    to finish, check the live site serves the new build, then tell the user the milestone is live
    so they can test it on their phone. Then stop: do not start the next milestone until asked.
-5. **Follow the theme rules** (below). All colours, sizes and spacing come from
+5. **Build systems, not one-off fixes.** Every rule has one owner module (for example "what is
+   due" lives in `src/app/review/queue.ts` on top of `src/core/srs`). When fixing a bug, find
+   that owner, write a test that fails, fix it there, and route every screen through it. Never
+   patch the same rule separately in several screens. If logic is repeated, consolidate it.
+6. **Follow the theme rules** (below). All colours, sizes and spacing come from
    `src/app/theme/tokens.css`.
 
 ## Theme rules
