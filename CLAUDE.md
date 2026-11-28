@@ -120,10 +120,14 @@ tests/e2e/                 ← Playwright tests
   The review screen rebuilds the question from that, so never change a released level's
   generator output for a given seed without a new level id.
 - Every level has `topics` with v2.0 blueprint tags like `v2-1.3`.
-- Question kinds the frame already supports: `ChoiceView` (tap one; optional facts, per-choice
-  "why wrong" text) and `FieldsView` (typed answers with an on-screen keypad, compared by value).
-  Mix them in one game with `MixedView`. Build new kinds in `src/app/frame/` so every game can
-  reuse them.
+- Question kinds the frame already supports (all in `src/app/frame/`): `ChoiceView` (tap one;
+  optional facts and per-choice "why wrong"), `FieldsView` (typed answers on an on-screen keypad,
+  compared by value), `LabelsView` (give every item one of a few options), `OrderView` (put items
+  in order). Mix them in one game with `MixedView`. Any question can show `visuals`: topology
+  diagrams (`src/app/topology`), tables, and numbered configuration lines. Build new kinds and
+  visuals there so every game can reuse them.
+- Show device settings as tables or configuration lines (input syntax). Never draw something that
+  looks like show-command output without a real sample (rule 3).
 - `src/app/registry.test.ts` checks every level: unique ids, real blueprint tags, and that every
   step generates. `tests/e2e/levels.spec.ts` opens every level at phone and desktop size.
 

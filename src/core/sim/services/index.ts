@@ -1,2 +1,3 @@
-/** Network services: ACLs. NAT/PAT, DHCP, DNS and ARP arrive with M7. */
+/** Network services: ACLs, DHCP (DORA, relay), NAT/PAT. */
 export * from './acl'
+export * from './dhcp-nat'
