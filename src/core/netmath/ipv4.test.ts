@@ -5,6 +5,7 @@
 import fc from 'fast-check'
 import { describe, expect, it } from 'vitest'
 import {
+  isRoutableUnicast,
   blockSize,
   broadcastOf,
   classifyIPv4,
@@ -304,5 +305,22 @@ describe('VLSM', () => {
       ),
       { numRuns: 2000 },
     )
+  })
+})
+
+describe('isRoutableUnicast', () => {
+  it('rejects multicast, class E, loopback, 0/8, link-local and broadcast', () => {
+    for (const a of [
+      '224.0.0.5',
+      '239.1.1.1',
+      '240.0.0.1',
+      '127.0.0.1',
+      '0.1.2.3',
+      '169.254.1.1',
+      '255.255.255.255',
+    ])
+      expect(isRoutableUnicast(parseIPv4(a) as number), a).toBe(false)
+    for (const a of ['8.8.8.8', '10.1.1.1', '203.0.113.5', '100.64.1.1'])
+      expect(isRoutableUnicast(parseIPv4(a) as number), a).toBe(true)
   })
 })

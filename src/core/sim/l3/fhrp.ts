@@ -40,7 +40,10 @@ export function electFhrp(routers: readonly FhrpRouter[]): {
 
 /**
  * The active router fails, then comes back. Returns who is active after the failure, and after
- * it returns: the old active only takes over again if it has preemption enabled and is better.
+ * it returns: the old active only takes over again if it has preemption enabled and a strictly
+ * higher priority. Equal priority never preempts, whatever the IP addresses: RFC 5798 6.4.2
+ * (VRRP: a Backup stays Backup if the advertised priority is greater than or equal to its own)
+ * and Cisco "Configuring HSRP" (standby preempt: take over when its priority is higher).
  */
 export function failover(routers: readonly FhrpRouter[]): {
   afterFailure: string | null
@@ -51,7 +54,7 @@ export function failover(routers: readonly FhrpRouter[]): {
   const afterFailure = rest.length ? electFhrp(rest).active : null
   const old = routers.find((r) => r.name === active) as FhrpRouter
   const current = routers.find((r) => r.name === afterFailure)
-  const takesBack = current === undefined || (old.preempt && better(old, current) < 0)
+  const takesBack = current === undefined || (old.preempt && old.priority > current.priority)
   return { afterFailure, afterReturn: takesBack ? old.name : (afterFailure as string) }
 }
 

@@ -80,6 +80,8 @@ export interface CommandDef {
   /** Accepts a leading "no". `noPattern` (if given) is the pattern after "no". */
   negatable?: boolean
   noPattern?: readonly Token[]
+  /** Only valid after "no" (e.g. "no ip route NET MASK" removes every route to the prefix). */
+  negatedOnly?: boolean
   /** Only on these device kinds (e.g. "no switchport" needs a multilayer switch). */
   kinds?: readonly DeviceState['kind'][]
   /** One-line help for the "?" panel and chips. */

@@ -60,8 +60,22 @@ export interface ChannelStatus {
   members: { name: string; state: MemberState; reason: string }[]
 }
 
-const l2Key = (i: Interface) =>
-  JSON.stringify([i.switchport, i.mode, i.accessVlan, i.nativeVlan, i.allowedVlans])
+/**
+ * The switchport settings that members of a channel must share. One list, used to compare
+ * members (suspended if different) and to copy port-channel settings onto members.
+ */
+const L2_FIELDS = ['switchport', 'mode', 'accessVlan', 'nativeVlan', 'allowedVlans'] as const
+
+export const l2Key = (i: Interface) => JSON.stringify(L2_FIELDS.map((f) => i[f]))
+
+/** Copy the shared switchport settings from one interface onto another. */
+export function copyL2Settings(from: Interface, to: Interface): void {
+  to.switchport = from.switchport
+  to.mode = from.mode
+  to.accessVlan = from.accessVlan
+  to.nativeVlan = from.nativeVlan
+  to.allowedVlans = from.allowedVlans === 'all' ? 'all' : [...from.allowedVlans]
+}
 
 /** Status of every channel group on a device, using the peers for the far ends. */
 export function channelStatus(s: DeviceState): ChannelStatus[] {

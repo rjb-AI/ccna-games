@@ -6,7 +6,7 @@
  * in CI and fails if any field differs.
  */
 import { shortIfName } from '../cli/ifname'
-import { type DeviceState, operationalMode } from '../device/state'
+import { type DeviceState, isReservedVlan, operationalMode } from '../device/state'
 import { interfaceStatus } from '../device/status'
 import { formatIPv4 } from '../netmath'
 import { channelStatus } from '../sim/l2/etherchannel'
@@ -39,6 +39,7 @@ export const OUTPUT_SPECS: readonly OutputSpec[] = [
     expected: (s) => [
       ...Object.keys(s.vlans)
         .map(Number)
+        .filter((v) => !isReservedVlan(v))
         .sort((a, b) => a - b)
         .map((v) => ({
           vlan_id: String(v),
@@ -88,7 +89,7 @@ export const OUTPUT_SPECS: readonly OutputSpec[] = [
         group: String(g.group),
         bundle_name: `Po${g.group}`,
         bundle_status: `${g.layer === 2 ? 'S' : 'R'}${g.up ? 'U' : 'D'}`,
-        bundle_protocol: g.protocol === 'lacp' ? 'LACP' : 'PAgP',
+        bundle_protocol: g.protocol === 'lacp' ? 'LACP' : g.protocol === 'pagp' ? 'PAgP' : '-',
         member_interface: g.members.map((m) => shortIfName(m.name)),
         member_interface_status: g.members.map(
           (m) => ({ bundled: 'P', down: 'D', suspended: 's' })[m.state],

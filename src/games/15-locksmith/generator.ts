@@ -177,7 +177,7 @@ const AAA_FACTS: { text: string; who: 'TACACS+' | 'RADIUS' | 'Both' }[] = [
   { text: 'Combines authentication and authorization', who: 'RADIUS' },
   { text: 'Common for per-command authorization of network admins', who: 'TACACS+' },
   { text: 'Used for 802.1X network access (users and devices joining the network)', who: 'RADIUS' },
-  { text: 'An open standard from the IETF (RFC 2865)', who: 'RADIUS' },
+  { text: 'A standards-track IETF protocol (RFC 2865) that many vendors build in', who: 'RADIUS' },
   { text: 'Lets a router check logins against a central server', who: 'Both' },
 ]
 

@@ -6,7 +6,8 @@
  * address; a static route with a next hop is installed only if the next hop is reachable through
  * a connected network (recursive lookup, one level here); a static route with an exit interface
  * needs that interface up. Default static AD is 1; a higher AD makes a floating route that is
- * installed only when the better route for the same prefix is gone.
+ * installed only when the better route for the same prefix is gone. Distance 255 means "never
+ * trust": such a route is never installed (Cisco "What Is Administrative Distance?").
  */
 import type { DeviceState } from '../../device/state'
 import { interfaceStatus } from '../../device/status'
@@ -46,6 +47,7 @@ export function routingTable(s: DeviceState, o: RouteOptions = {}): Route[] {
   const conn = connected(s, o)
   const statics: Route[] = s.staticRoutes.flatMap((r) => {
     if (r.family !== 'ipv4' || r.network === undefined || r.mask === undefined) return []
+    if (r.distance >= 255) return []
     const prefix = maskToPrefix(r.mask)
     if (prefix === null) return []
     let exit: string | undefined = r.exitInterface
@@ -99,6 +101,7 @@ export function routingTable6(s: DeviceState, o: RouteOptions = {}): Route6[] {
   )
   const statics: Route6[] = s.staticRoutes.flatMap((r) => {
     if (r.family !== 'ipv6' || !r.network6 || r.prefixLength === undefined) return []
+    if (r.distance >= 255) return []
     let exit = r.exitInterface
     if (r.nextHop6) {
       const via = conn.find((c) => inIPv6Prefix(r.nextHop6 as IPv6, c.network, c.prefixLength))

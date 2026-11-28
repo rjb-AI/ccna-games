@@ -151,8 +151,20 @@ export function parseLine(
   let i = 0
   let negated = false
 
-  // A leading "no" (exact or abbreviated to "no"; "n" alone is ambiguous on IOS).
-  if (words[0]?.text.toLowerCase() === 'no' && inMode.some((d) => d.negatable)) {
+  // A leading "no", or an abbreviation of it that no other first word in this mode shares
+  // ("n" is ambiguous in global config, where "ntp" also starts with n).
+  const first = words[0]?.text.toLowerCase() ?? ''
+  const firstWords = [
+    ...new Set([
+      ...inMode.flatMap((d) => (d.pattern[0] && 'kw' in d.pattern[0] ? [d.pattern[0].kw] : [])),
+      ...(KNOWN_KEYWORDS[mode] ?? []),
+    ]),
+  ]
+  const isNo =
+    first !== '' &&
+    'no'.startsWith(first) &&
+    (first === 'no' || firstWords.filter((w) => w.startsWith(first)).every((w) => w === 'no'))
+  if (isNo && inMode.some((d) => d.negatable)) {
     negated = true
     i = 1
     alive = inMode
@@ -160,7 +172,9 @@ export function parseLine(
       .map((d) => ({ def: d, pattern: d.noPattern ?? d.pattern, pos: 0, args: {} }))
     if (words.length === 1) return { ok: false, error: 'incomplete' }
   } else {
-    alive = inMode.map((d) => ({ def: d, pattern: d.pattern, pos: 0, args: {} }))
+    alive = inMode
+      .filter((d) => !d.negatedOnly)
+      .map((d) => ({ def: d, pattern: d.pattern, pos: 0, args: {} }))
   }
 
   const prevKeywords: string[] = []
@@ -172,7 +186,7 @@ export function parseLine(
 
     // Keywords first.
     const ours = [...new Set(kwHere.map((a) => (a.pattern[a.pos] as { kw: string }).kw))]
-    const known = negated && prevKeywords.length === 0 ? [] : knownWordsAt(mode, prevKeywords)
+    const known = knownWordsAt(mode, prevKeywords)
     const all = [...new Set([...ours, ...known])]
     const exact = all.find((k) => k === lower)
     const matches = exact ? [exact] : all.filter((k) => k.startsWith(lower))
@@ -283,7 +297,7 @@ export function nextWords(
   for (const d of inMode) {
     if (negated) {
       if (d.negatable) consider(d, d.noPattern ?? d.pattern, 1)
-    } else {
+    } else if (!d.negatedOnly) {
       consider(d, d.pattern, 0)
       if (d.negatable && done.length === 0 && 'no'.startsWith(partial)) {
         out.set('no', { word: 'no', help: 'Undo a setting', isArg: false })

@@ -392,7 +392,8 @@ describe('helpers for the phone keyboard', () => {
   it('every catalogue command parses in its own mode with its own words', () => {
     for (const d of COMMANDS) {
       const words = d.pattern.map((t) => ('kw' in t ? t.kw : sampleArg(t.arg)))
-      const r = parseLine(words.join(' '), d.modes[0] as never, COMMANDS, 'l3switch')
+      const line = `${d.negatedOnly ? 'no ' : ''}${words.join(' ')}`
+      const r = parseLine(line, d.modes[0] as never, COMMANDS, 'l3switch')
       expect(r.ok, `${d.id}: ${words.join(' ')}`).toBe(true)
     }
   })
@@ -413,3 +414,77 @@ function sampleArg(a: string): string {
     } as Record<string, string>
   )[a] as string
 }
+
+describe('audit fixes', () => {
+  it('the caret after "do" sits under the bad word on the config line', () => {
+    const { transcript } = run(['conf t', 'do show vlan brif'])
+    const caret = transcript[1]?.output[0] ?? ''
+    expect(caret.indexOf('^')).toBe('SW1(config)#'.length + 'do show vlan '.length)
+  })
+
+  it('no ip route NET MASK removes every route to the prefix', () => {
+    const { session, transcript } = run([
+      'conf t',
+      'ip route 10.1.0.0 255.255.0.0 10.0.0.2',
+      'ip route 10.1.0.0 255.255.0.0 10.0.1.2 200',
+      'no ip route 10.1.0.0 255.255.0.0',
+    ])
+    expect(transcript[3]?.output).toEqual([])
+    expect(session.state.staticRoutes).toEqual([])
+  })
+
+  it('"ip route NET MASK" without "no" is still incomplete', () => {
+    expect(run(['conf t', 'ip route 10.1.0.0 255.255.0.0']).transcript[1]?.output).toEqual([
+      '% Incomplete command.',
+    ])
+  })
+
+  it('abbreviations after "no" are judged like any other', () => {
+    // "sp" could be spanning-tree or speed.
+    expect(run(['conf t', 'int g1/0/1', 'no sp portfast']).transcript[2]?.output).toEqual([
+      '% Ambiguous command: "no sp portfast"',
+    ])
+    // "n" is "no" in interface mode (nothing else there starts with n).
+    const r = run(['conf t', 'int g1/0/1', 'shutdown', 'n shutdown'])
+    expect(r.session.state.interfaces['GigabitEthernet1/0/1']?.shutdown).toBe(false)
+  })
+
+  it('a real global command from a sub-mode says "not in this level", not invalid input', () => {
+    const { transcript } = run(['conf t', 'int g1/0/1', 'router ospf 1'])
+    expect(transcript[2]?.output).toEqual([])
+    expect(transcript[2]?.notes[0]).toMatch(/level/)
+  })
+
+  it('interface range works with port-channels and refuses huge or subinterface ranges', () => {
+    expect(expandIfRange('port-channel1 - 2')).toEqual(['Port-channel1', 'Port-channel2'])
+    expect(expandIfRange('gi1/0/1 - 5000000')).toBeNull()
+    expect(expandIfRange('gi1/0/1.5 - 3')).toBeNull()
+  })
+
+  it('VLAN 1 keeps its name; 1002-1005 cannot be created or deleted', () => {
+    const r = run(['conf t', 'vlan 1', 'name X', 'exit', 'vlan 1003', 'no vlan 1002'])
+    expect(r.session.state.vlans[1]).toBe('default')
+    expect(r.session.state.vlans[1003]).toBeUndefined()
+    expect(r.transcript[2]?.notes[0]).toMatch(/default VLAN/)
+    expect(r.transcript[4]?.notes[0]).toMatch(/reserved/)
+  })
+
+  it('switchport settings on a port-channel copy to members; other commands do not', () => {
+    const { session } = run([
+      'conf t',
+      'int range gi1/0/5 - 6',
+      'channel-group 2 mode active',
+      'int gi1/0/6',
+      'sw trunk native vlan 99',
+      'int po2',
+      'description uplink',
+    ])
+    expect(session.state.interfaces['GigabitEthernet1/0/6']?.nativeVlan).toBe(99)
+  })
+
+  it('a voice VLAN that does not exist is created with a note, not an IOS message', () => {
+    const { transcript } = run(['conf t', 'int g1/0/1', 'sw voice vlan 150'])
+    expect(transcript[2]?.output).toEqual([])
+    expect(transcript[2]?.notes[0]).toMatch(/created/)
+  })
+})

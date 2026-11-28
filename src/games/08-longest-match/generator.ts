@@ -10,7 +10,13 @@ import type { MixedQuestion } from '../../app/frame/mixed'
 import { type CliRouteKind, cliRouteQuestion } from './cli'
 
 import type { TableVisual } from '../../app/frame/visuals'
-import { type IPv4, formatIPv4, networkOf, prefixToMask } from '../../core/netmath'
+import {
+  type IPv4,
+  formatIPv4,
+  isRoutableUnicast,
+  networkOf,
+  prefixToMask,
+} from '../../core/netmath'
 import { type Rng, stepRng } from '../../core/rng'
 import {
   DEFAULT_AD,
@@ -113,7 +119,11 @@ function pickRoute(rng: Rng): ChoiceQuestion {
   let dst: IPv4
   if (target === null)
     dst = ((rng.pick([172, 192, 8, 9]) << 24) | (rng.int(0, 255) << 16) | rng.int(1, 65000)) >>> 0
-  else dst = (target.network + rng.int(0, 2 ** (32 - target.prefix) - 1)) >>> 0
+  else {
+    // Re-pick until it's an ordinary unicast address (a default route doesn't carry multicast).
+    do dst = (target.network + rng.int(0, 2 ** (32 - target.prefix) - 1)) >>> 0
+    while (!isRoutableUnicast(dst))
+  }
   const hit = lookup(table, dst)
   const answer = hit.length
     ? `${formatRoute(hit[0] as Route)} via ${hit[0]?.nextHop === null ? 'directly connected' : fmt(hit[0]?.nextHop as IPv4)}`
@@ -133,7 +143,11 @@ function pickRoute(rng: Rng): ChoiceQuestion {
       wrong.map((w) => {
         const r = table.find((x) => w.startsWith(`${formatRoute(x)} `))
         if (!r)
-          return [w, 'The default route 0.0.0.0/0 matches everything that has no better route.']
+          // The only choice that isn't a route is "Dropped".
+          return [
+            w,
+            `${formatRoute(hit[0] as (typeof table)[number])} contains ${fmt(dst)}, so the packet is forwarded, not dropped.`,
+          ]
         return [
           w,
           lookup([r], dst).length

@@ -15,7 +15,7 @@ function optionTrue(
   const get = (k: string) => rows.find((r) => r[0] === k)?.[1] ?? ''
   const snooping = get('DHCP snooping') === 'on'
   const dai = get('Dynamic ARP Inspection') === 'on'
-  const trusted = get('Trusted ports').split(', ')
+  const trusted = get('DHCP snooping trusted ports').split(', ')
   if (option.startsWith('DHCP snooping is off')) return !snooping
   if (option.startsWith('Dynamic ARP Inspection is off')) return !dai
   if (option.startsWith('DAI is on, but')) return dai && !snooping

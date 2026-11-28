@@ -9,7 +9,7 @@ export const hexGarden = defineGame({
   title: 'Hex Garden',
   tagline: 'Shorten, expand and sort IPv6 addresses',
   howToPlay: [
-    'Prune IPv6 addresses to their shortest legal form, grow them back to full form, and sort them into address types.',
+    'Prune IPv6 addresses to their recommended short form (RFC 5952), grow them back to full form, and sort them into address types.',
     'Other levels build an EUI-64 interface ID from a MAC address and count subnets.',
     'Tap the right choice. In Break-Fix, spot the address that was shortened wrongly.',
   ],
