@@ -51,6 +51,24 @@ describe('registry', () => {
     }
   })
 
+  it('sorting bins never move: the same bins in the same order across a level', () => {
+    for (const g of GAMES) {
+      for (const l of g.levels) {
+        const seen = new Set<string>()
+        for (const seed of [1, 2, 3, 99]) {
+          for (let step = 0; step < l.questionCount; step++) {
+            const m = g.makeQuestion(l, seed, step) as MixedQuestion
+            if (m.kind === 'labels' && m.q.display === 'bins') seen.add(m.q.options.join('|'))
+          }
+        }
+        // One question kind per level can use bins; all its questions show the same bins.
+        expect(seen.size, `${g.id}/${l.id}: ${[...seen].join(' / ')}`).toBeLessThanOrEqual(
+          new Set([...seen].map((o) => o.split('|').length)).size,
+        )
+      }
+    }
+  })
+
   it('every game belongs to a domain', () => {
     const domainIds = DOMAINS.map((d) => d.id)
     for (const g of GAMES) expect(domainIds, g.id).toContain(g.domainId)

@@ -1,3 +1,4 @@
+import { BinsView } from './BinsView'
 import { ChoiceView } from './ChoiceView'
 import { CliView } from './CliView'
 import { WireBoardView } from './WireBoardView'
@@ -64,8 +65,9 @@ export function MixedView(props: QuestionViewProps<MixedQuestion, MixedResponse>
     )
   }
   if (m.kind === 'labels') {
+    const View = m.q.display === 'bins' ? BinsView : LabelsView
     return (
-      <LabelsView
+      <View
         {...rest}
         question={m.q}
         response={

@@ -54,3 +54,39 @@ test('ordering questions still work by tapping (OSPF states)', async ({ page }) 
   await page.getByRole('button', { name: /Check answer/ }).click()
   await expect(page.getByRole('status')).toBeVisible()
 })
+
+test('sort into bins: bins stay put, cards go back, check works', async ({ page }) => {
+  await page.goto('./#/play/help-desk-hotline/records?seed=2')
+  // Record types are always in the same order.
+  await expect(page.locator('.bin-head .bin-name')).toHaveText([
+    'A',
+    'AAAA',
+    'CNAME',
+    'MX',
+    'NS',
+    'PTR',
+  ])
+  // The test knows what each record type is for (RFC 1035, RFC 3596).
+  const job: Record<string, string> = {
+    'Name → IPv4 address': 'A',
+    'Name → IPv6 address': 'AAAA',
+    'Name → another name (an alias)': 'CNAME',
+    'Domain → its mail server': 'MX',
+    'Zone → its authoritative name servers': 'NS',
+    'IP address → name (reverse lookup)': 'PTR',
+  }
+  const before = await page.locator('.bin-head').first().boundingBox()
+  // Put the first card in the wrong bin, then take it back out.
+  await page.locator('.bin-head').first().click()
+  await page.locator('.bin-card').first().click()
+  for (;;) {
+    const card = page.locator('.bins-card-text')
+    if ((await card.count()) === 0) break
+    const text = (await card.innerText()).trim()
+    await page.locator(`.bin-head[data-bin="${job[text]}"]`).click()
+  }
+  const after = await page.locator('.bin-head').first().boundingBox()
+  expect(after?.y).toBe(before?.y)
+  await page.getByRole('button', { name: 'Check answer' }).click()
+  await expect(page.getByRole('status')).toContainText('Correct')
+})

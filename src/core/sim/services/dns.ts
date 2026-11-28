@@ -13,6 +13,9 @@ export interface DnsRecord {
   value: string
 }
 
+/** Record types in a fixed teaching order (address records first). */
+export const RECORD_TYPES: readonly RecordType[] = ['A', 'AAAA', 'CNAME', 'MX', 'NS', 'PTR']
+
 export const RECORD_MEANING: Record<RecordType, string> = {
   A: 'Name → IPv4 address',
   AAAA: 'Name → IPv6 address',

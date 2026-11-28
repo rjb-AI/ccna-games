@@ -72,6 +72,7 @@ function vmOrContainer(rng: Rng): LabelsQuestion {
     prompt: 'VM, container, or both?',
     items: items.map((x, i) => ({ id: String(i), label: x.text })),
     options: ['VM', 'Container', 'Both'],
+    display: 'bins',
     answers: Object.fromEntries(items.map((x, i) => [String(i), x.a])),
     explanation:
       'A VM virtualises the hardware and runs its own OS on a hypervisor. A container packages an app with its libraries and shares the host OS kernel, so it is lighter and faster to start.',
@@ -85,6 +86,7 @@ function hypervisorType(rng: Rng): LabelsQuestion {
     prompt: 'Type 1 or type 2 hypervisor?',
     items: items.map((x, i) => ({ id: String(i), label: x.name })),
     options: ['Type 1', 'Type 2'],
+    display: 'bins',
     answers: Object.fromEntries(items.map((x, i) => [String(i), x.type])),
     explanation:
       'Type 1 (bare metal) runs directly on the hardware: ESXi, Hyper-V, Xen. Type 2 (hosted) runs as an application on a normal OS: VirtualBox, VMware Workstation.',

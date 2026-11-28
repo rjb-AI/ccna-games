@@ -79,6 +79,7 @@ function trapQuestion(rng: Rng): LabelsQuestion {
     prompt: `R1 has "logging trap ${sev(t).keyword}". Which of these messages reach the syslog server?`,
     items: items.map((x) => ({ id: String(x.level), label: `Level ${x.level} (${x.name})` })),
     options: ['Sent', 'Not sent'],
+    display: 'bins',
     answers: Object.fromEntries(
       items.map((x) => [String(x.level), inc.includes(x.level) ? 'Sent' : 'Not sent']),
     ),

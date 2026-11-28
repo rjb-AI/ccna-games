@@ -6,15 +6,13 @@ of each column.
 
 ## Doing
 
-- **Game-like mechanics, game by game**: full proposal in `docs/MECHANICS.md` (8 reusable kinds,
-  every game, build order). Waiting for the user to pick where to start; recommended step 1 is
-  "sort into bins" (also fixes the Records grid), then "tap the diagram".
+- **Game-like mechanics, in the MECHANICS.md build order** (user: "do them in the order you
+  suggested"). Step 1 sort into bins: done. Now: step 2, tap the diagram (pick mode), together
+  with making diagrams fit the phone width. Then: assign mode, swipe deck, bit board, match pairs
+  and code tiles, packet path, grid placement.
 
 ## Next
 
-- **Records (Help Desk Hotline) and every "label each item" question:** options in a fixed
-  order every time (muscle memory), equal-size buttons in a tidy grid. For DNS add records to
-  balance the grid (e.g. TXT, NS → 6 = 2 rows of 3). (User, 28 Nov)
 - **Coverage and ambiguity leftovers**: ACL break-fix with only 2 lines to choose from; ETSI
   channel plans note in Airwaves; AI desk depth; NAT static inside-global collision check.
 
@@ -55,6 +53,13 @@ Reusable interaction kinds, then which games use them:
 - **Fix the file**: Playbook Runner, tap lines to indent/outdent YAML.
 
 ## Done
+
+- 28 Nov: **Sort into bins** (mechanics step 1): a card deck sorted into a fixed grid of
+  equal-size bins (tap, drag or number keys); sorted cards listed under the bins so the bins
+  never move. Records now always shows A, AAAA, CNAME, MX, NS, PTR in the same 3x2 grid. Also
+  used by VM or container, hypervisor type, TACACS+ or RADIUS, SSH needed, encrypted transfers,
+  syslog sent or not, trusted ports. Registry test: bins never change order within a level.
+  Hub chip test waits for the save (fixes a flake).
 
 - 28 Nov: **Audit fixes: app bugs** (PR "App bug fixes"):
   - Malformed `%` in the URL no longer blanks the app (safe decode in the router), and a
