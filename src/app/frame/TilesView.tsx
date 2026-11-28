@@ -49,7 +49,7 @@ export function TilesView({
       <Prompt text={q.prompt} hint={q.hint} hintsAllowed={hintsAllowed && !answered} />
       <Visuals visuals={q.visuals} />
       <figure className="tiles-code">
-        <figcaption>{q.caption}</figcaption>
+        {q.caption && <figcaption>{q.caption}</figcaption>}
         <ol>
           {q.lines.map((line, li) => {
             // Leading spaces become a hanging indent: a long line wraps, but its continuation

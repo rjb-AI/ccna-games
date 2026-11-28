@@ -24,6 +24,8 @@ export interface TilesQuestion {
   reuse?: boolean
   /** How each blank reads in feedback, e.g. "Source MAC" (default "Blank N"). */
   blankNames?: readonly string[]
+  /** Why a wrong chip is wrong, per blank: added to the explanation when that chip is placed. */
+  chipWhy?: readonly (Readonly<Record<string, string>> | undefined)[]
   explanation: string
   hint?: string
 }
@@ -58,7 +60,10 @@ export function checkTiles(q: TilesQuestion, r: TilesResponse): Check {
     correct: parts.every((p) => p.correct),
     given: fillLines(q, r).join('\n'),
     expected: fillLines(q, q.answers).join('\n'),
-    explanation: q.explanation,
+    explanation: [
+      ...parts.flatMap((p, i) => (p.correct ? [] : [q.chipWhy?.[i]?.[p.given]].filter(Boolean))),
+      q.explanation,
+    ].join(' '),
     parts,
   }
 }

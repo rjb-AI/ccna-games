@@ -65,6 +65,61 @@ export function portsOf(t: Topology, deviceId: string): string[] {
   return linksOf(t, deviceId).map((l) => ends(l, deviceId).local.port)
 }
 
+/** One hop of a path: the link crossed and the device it leaves from. */
+export interface Hop {
+  link: Link
+  from: string
+}
+
+/** A packet crossing an interface: in where it arrives, out where it leaves. */
+export interface Crossing {
+  device: string
+  port: string
+  dir: 'in' | 'out'
+}
+
+/** Fewest-hops path between two devices (breadth first, links in topology order), or null. */
+export function pathBetween(t: Topology, from: string, to: string): Hop[] | null {
+  const prev = new Map<string, Hop>()
+  const seen = new Set([from])
+  const queue = [from]
+  while (queue.length) {
+    const d = queue.shift() as string
+    if (d === to) break
+    for (const l of linksOf(t, d)) {
+      const next = ends(l, d).remote.device
+      if (seen.has(next)) continue
+      seen.add(next)
+      prev.set(next, { link: l, from: d })
+      queue.push(next)
+    }
+  }
+  if (!seen.has(to)) return null
+  const hops: Hop[] = []
+  for (let d = to; d !== from;) {
+    const h = prev.get(d) as Hop
+    hops.unshift(h)
+    d = h.from
+  }
+  return hops
+}
+
+/** A crossing on a path, with the index of the hop it belongs to. */
+export interface PathCrossing extends Crossing {
+  hop: number
+}
+
+/** The interfaces a path crosses, in order (unnamed ports, such as a LAN cloud's, are skipped). */
+export function crossingsOf(hops: readonly Hop[]): PathCrossing[] {
+  const out: PathCrossing[] = []
+  hops.forEach((h, hop) => {
+    const { local, remote } = ends(h.link, h.from)
+    if (local.port) out.push({ device: local.device, port: local.port, dir: 'out', hop })
+    if (remote.port) out.push({ device: remote.device, port: remote.port, dir: 'in', hop })
+  })
+  return out
+}
+
 /** True if every device can reach every other device. */
 export function isConnected(t: Topology): boolean {
   if (t.devices.length === 0) return true

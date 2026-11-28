@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type Topology, diagramDiffs, neighborsOf } from './index'
+import { type Topology, crossingsOf, diagramDiffs, neighborsOf, pathBetween } from './index'
 
 const actual: Topology = {
   devices: [
@@ -94,5 +94,34 @@ describe('diagram diffs', () => {
     expect(diagramDiffs(actual, real)).toEqual([
       { kind: 'missing-device', device: 'SW4', attachedTo: 'SW2', port: 'Gi1/0/3' },
     ])
+  })
+})
+
+describe('paths', () => {
+  const chain: Topology = {
+    devices: ['PC', 'R1', 'R2', 'LAN'].map((id) => ({ id, kind: 'router', label: id, x: 0, y: 0 })),
+    links: [
+      { id: 'a', a: { device: 'PC', port: '' }, b: { device: 'R1', port: 'Gi0/0' }, speed: 1000 },
+      {
+        id: 'b',
+        a: { device: 'R2', port: 'Gi0/0' },
+        b: { device: 'R1', port: 'Gi0/1' },
+        speed: 1000,
+      },
+      { id: 'c', a: { device: 'R2', port: 'Gi0/1' }, b: { device: 'LAN', port: '' }, speed: 1000 },
+    ],
+  }
+
+  it('finds the hops and the interfaces crossed, in and out', () => {
+    const hops = pathBetween(chain, 'PC', 'LAN')
+    expect(hops?.map((h) => `${h.from}>${h.link.id}`)).toEqual(['PC>a', 'R1>b', 'R2>c'])
+    expect(crossingsOf(hops ?? []).map((c) => `${c.hop} ${c.device} ${c.port} ${c.dir}`)).toEqual([
+      '0 R1 Gi0/0 in',
+      '1 R1 Gi0/1 out',
+      '1 R2 Gi0/0 in',
+      '2 R2 Gi0/1 out',
+    ])
+    expect(pathBetween(chain, 'R1', 'R1')).toEqual([])
+    expect(pathBetween({ ...chain, links: [] }, 'PC', 'LAN')).toBeNull()
   })
 })

@@ -41,6 +41,10 @@ export interface PacketFlow {
   label?: string
   /** Start after this many ms (later hops of a path). */
   delayMs?: number
+  /** The packet is dropped at the end of this hop: drawn red with ✕. */
+  dropped?: boolean
+  /** The packet moves on to a later hop: fade out at the end of this one. */
+  fades?: boolean
 }
 
 export interface TableVisual {
@@ -56,6 +60,7 @@ export interface TableVisual {
 
 export interface CodeVisual {
   kind: 'code'
+  /** Shown above the lines (empty: none, when the first line says what it is). */
   caption: string
   /** Configuration lines (input syntax), numbered on screen. */
   lines: readonly string[]

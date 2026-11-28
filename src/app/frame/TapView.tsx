@@ -1,7 +1,7 @@
 /**
  * Answer by tapping the diagram (tap.ts). Tap an outlined switch or port to pick it, tap another
  * to change your mind, then Check. Keyboard: Tab to a spot, Enter to pick it. With `after`, the
- * diagram then shows what happens next (replayable).
+ * diagram then shows what happens next (replayable); with `afterFor`, what happens for your pick.
  */
 import { useState } from 'react'
 import { TopologyView } from '../topology/TopologyView'
@@ -20,6 +20,9 @@ export function TapView({
   const [run, setRun] = useState(0)
   const answered = response !== null
   const shown = answered ? response : picked
+  const outcome = answered
+    ? (q.afterFor?.[response] ?? (q.after ? { diagram: q.after } : undefined))
+    : undefined
   const marks: Record<string, 'right' | 'wrong'> | undefined = answered
     ? { [q.answer]: 'right', ...(response !== q.answer ? { [response]: 'wrong' } : {}) }
     : undefined
@@ -29,7 +32,7 @@ export function TapView({
       <Prompt text={q.prompt} hint={q.hint} hintsAllowed={hintsAllowed && !answered} />
       <TopologyView
         key={run}
-        v={answered && q.after ? q.after : q.diagram}
+        v={outcome ? outcome.diagram : q.diagram}
         pick={{
           options: q.options,
           picked: shown ? [shown] : [],
@@ -38,19 +41,20 @@ export function TapView({
           onPick: setPicked,
         }}
       />
-      {answered && q.after && (
+      {outcome && (
         <p className="exits-result">
-          What happens next
+          {q.afterTitle ?? 'What happens next'}
           <button type="button" className="btn-secondary" onClick={() => setRun((n) => n + 1)}>
             ▶ Replay
           </button>
         </p>
       )}
+      {outcome?.visuals && <Visuals visuals={outcome.visuals} />}
       <Visuals visuals={q.visuals} />
       {!answered && (
         <div className="keypad-actions">
           <button type="button" disabled={!picked} onClick={() => picked && onAnswer(picked)}>
-            {picked ? `Check: ${q.names[picked] ?? picked}` : 'Tap your answer on the diagram'}
+            {picked ? `Check: ${q.names[picked] ?? picked}` : 'Tap the diagram to answer'}
           </button>
         </div>
       )}

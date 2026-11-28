@@ -49,7 +49,7 @@ function TableView({ v }: { v: TableVisual }) {
 function CodeView({ v }: { v: CodeVisual }) {
   return (
     <figure className="qcode">
-      <figcaption>{v.caption}</figcaption>
+      {v.caption && <figcaption>{v.caption}</figcaption>}
       <ol>
         {v.lines.map((l, i) => (
           <li key={i} className={i === v.highlightLine ? 'is-hot' : undefined}>

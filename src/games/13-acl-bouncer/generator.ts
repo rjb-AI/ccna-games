@@ -26,14 +26,23 @@ import {
   type AclVerdict,
   type Packet,
   WELL_KNOWN,
+  type EntryField,
   describePacket,
   disagreements,
   evaluateAcl,
+  formatAclConfig,
+  formatAddr,
+  formatEntryParts,
   formatAclLines,
+  runAclOnPath,
 } from '../../core/sim/services'
 
+import { type PathCrossing, type Topology, crossingsOf, pathBetween } from '../../core/topology'
+import type { TapAfter, TapQuestion } from '../../app/frame/tap'
+import { BLANK, type TilesQuestion } from '../../app/frame/tiles'
+import type { PacketFlow, TableVisual, TopologyVisual } from '../../app/frame/visuals'
+
 const ACTION_VERB = { permit: 'permits', deny: 'denies' } as const
-import type { Topology } from '../../core/topology'
 
 export type BouncerKind =
   | 'door-standard'
@@ -41,7 +50,9 @@ export type BouncerKind =
   | 'wildcard'
   | 'wildcard-bits'
   | 'builder'
+  | 'build-tiles'
   | 'placement'
+  | 'place-test'
   | 'breakfix'
 export interface BouncerParams {
   kinds: readonly BouncerKind[]
@@ -335,6 +346,10 @@ function wildcardQuestion(rng: Rng): MixedQuestion {
 
 interface Policy {
   text: string
+  /** The same policy in fewer words (for screens that also show the ACL). */
+  short: string
+  /** A name for the ACL when it is shown as a named ACL. */
+  name: string
   correct: Acl
   wrongs: { acl: Acl; why: string }[]
   packets: Packet[]
@@ -387,6 +402,8 @@ function policyFor(rng: Rng, c: ReturnType<typeof company>): Policy {
     const permitAll: AclEntry = { action: 'permit', protocol: 'ip', src: any, dst: any }
     return {
       text: `${a.name} (${fmt(a.network)}/${a.prefix}) may reach the web server ${fmt(c.servers.web)} on HTTPS only. Block everything else from ${a.name}. Allow all other traffic.`,
+      short: `${a.name} (${fmt(a.network)}/${a.prefix}): only HTTPS to ${fmt(c.servers.web)}. Allow all other traffic.`,
+      name: 'WEB',
       correct: ext([allowWeb, blockRest, permitAll]),
       wrongs: [
         {
@@ -428,6 +445,8 @@ function policyFor(rng: Rng, c: ReturnType<typeof company>): Policy {
     const permitAll: AclEntry = { action: 'permit', protocol: 'ip', src: any, dst: any }
     return {
       text: `Stop ${b.name} (${fmt(b.network)}/${b.prefix}) from using Telnet to anything. Allow everything else.`,
+      short: `Stop ${b.name} (${fmt(b.network)}/${b.prefix}) using Telnet. Allow everything else.`,
+      name: 'TELNET',
       correct: ext([deny, permitAll]),
       wrongs: [
         {
@@ -468,6 +487,8 @@ function policyFor(rng: Rng, c: ReturnType<typeof company>): Policy {
   const permitAny: AclEntry = { action: 'permit', protocol: 'ip', src: any }
   return {
     text: `With a standard ACL: stop the PC ${fmt(h)} from reaching the server LAN. Allow everyone else.`,
+    short: `Standard ACL: stop the PC ${fmt(h)} reaching the servers. Allow everyone else.`,
+    name: 'PC',
     correct: std([denyHost, permitAny]),
     wrongs: [
       {
@@ -511,6 +532,90 @@ function builderQuestion(rng: Rng): ChoiceQuestion {
     explanation: `This ACL handles all ${p.packets.length} test packets the way the policy wants: specific lines first, then the broad ones, and an explicit permit at the end if anything else should pass.`,
     hint: 'Order matters (first match wins), and every ACL ends with an invisible deny any.',
     mono: true,
+  }
+}
+
+// ---------- build it from tiles: each wrong tile is fired at the test packets ----------
+
+const FIELD_NAME: Partial<Record<EntryField, string>> = {
+  action: 'action',
+  src: 'source',
+  dstPort: 'port',
+}
+
+function buildTilesQuestion(rng: Rng): TilesQuestion {
+  const c = company(rng)
+  const p = policyFor(rng, c)
+  const acl = p.correct
+  const lines: string[] = [`ip access-list ${acl.kind} ${p.name}`]
+  const answers: string[] = []
+  const blankNames: string[] = []
+  const chipWhy: Record<string, string>[] = []
+  // The bank, grouped by kind so it packs into few rows: actions, sources, ports.
+  const bank: Record<'action' | 'src' | 'dstPort', Set<string>> = {
+    action: new Set(),
+    src: new Set(),
+    dstPort: new Set(),
+  }
+  acl.entries.forEach((e, n) => {
+    const words = formatEntryParts(e, acl.kind).map((part) => {
+      // The chips this blank offers: the right one and wrong ones of the same kind.
+      const options = new Map<string, AclEntry>()
+      if (part.field === 'action') {
+        options.set('permit', { ...e, action: 'permit' })
+        options.set('deny', { ...e, action: 'deny' })
+      } else if (part.field === 'src' && e.src.kind !== 'any') {
+        options.set(part.text, e)
+        const [team] = c.teams as [Net]
+        const other: AclEntry['src'] =
+          e.src.kind === 'host'
+            ? wc(team)
+            : { kind: 'wildcard', ip: e.src.ip, wildcard: ~e.src.wildcard >>> 0 }
+        options.set(formatAddr(other), { ...e, src: other })
+      } else if (part.field === 'dstPort' && e.dstPort?.op === 'eq') {
+        const right = e.dstPort.port
+        for (const port of [
+          right,
+          ...rng.shuffle([80, 443, 22, 23].filter((x) => x !== right)).slice(0, 2),
+        ])
+          options.set(String(port), { ...e, dstPort: { op: 'eq', port } })
+      }
+      if (options.size === 0) return part.text
+      const want =
+        part.field === 'dstPort' ? String((e.dstPort as { port: number }).port) : part.text
+      const why: Record<string, string> = {}
+      for (const [chip, variant] of options) {
+        bank[part.field as keyof typeof bank].add(chip)
+        if (chip === want) continue
+        const broken: Acl = { ...acl, entries: acl.entries.map((x, j) => (j === n ? variant : x)) }
+        const bad = disagreements(acl, broken, p.packets)
+        const pkt = bad[0]
+        why[chip] = pkt
+          ? `With "${chip}" in line ${n + 1}, ${bad.length} of ${p.packets.length} test packets go the wrong way, for example ${describePacket(pkt)}.`
+          : `"${chip}" in line ${n + 1} is not what the policy says.`
+      }
+      answers.push(want)
+      blankNames.push(`Line ${n + 1} ${FIELD_NAME[part.field] ?? part.field}`)
+      chipWhy.push(why)
+      return part.field === 'dstPort' ? `eq ${BLANK}` : BLANK
+    })
+    lines.push(` ${words.join(' ')}`)
+  })
+  return {
+    prompt: p.short,
+    caption: '',
+    lines,
+    chips: [
+      ...bank.action,
+      ...rng.shuffle([...bank.src]),
+      ...[...bank.dstPort].sort((x, y) => Number(x) - Number(y)),
+    ],
+    answers,
+    reuse: true,
+    blankNames,
+    chipWhy,
+    explanation: `This ACL handles all ${p.packets.length} test packets the way the policy wants. Lines are checked top-down and the first match wins; anything no line matches hits the invisible deny at the end.`,
+    hint: 'ACLs use wildcard masks (0.0.0.255), not subnet masks. HTTPS is 443, HTTP 80, SSH 22, Telnet 23.',
   }
 }
 
@@ -591,6 +696,201 @@ function placementQuestion(rng: Rng): ChoiceQuestion {
   }
 }
 
+// ---------- place it and test it: tap the interface, then a test volley runs ----------
+
+const HOP_MS = 900
+const VOLLEY_GAP_MS = 450
+
+function placeTestQuestion(rng: Rng): TapQuestion {
+  const c = company(rng)
+  // Short names, so the diagram fits a phone.
+  const [na, nb] = rng.shuffle(['Sales', 'HR', 'Guests', 'Support', 'Lab']) as [string, string]
+  const [a, b] = [
+    { ...(c.teams[0] as Net), name: na },
+    { ...(c.teams[1] as Net), name: nb },
+  ]
+  const srvNet = networkOf(c.servers.web, 24)
+  const standard = rng.chance(0.5)
+  const acl: Acl = standard
+    ? {
+        kind: 'standard',
+        id: `NO-${a.name.toUpperCase()}`,
+        entries: [
+          { action: 'deny', protocol: 'ip', src: wc(a) },
+          { action: 'permit', protocol: 'ip', src: any },
+        ],
+      }
+    : {
+        kind: 'extended',
+        id: `NO-${a.name.toUpperCase()}`,
+        entries: [
+          {
+            action: 'deny',
+            protocol: 'ip',
+            src: wc(a),
+            dst: wc({ name: 'Servers', network: srvNet, prefix: 24 }),
+          },
+          { action: 'permit', protocol: 'ip', src: any, dst: any },
+        ],
+      }
+  // A zig-zag, so every router-to-router link is long enough for two ports to tap.
+  const topo: Topology = {
+    devices: [
+      { id: 'S', kind: 'host', label: a.name, x: 0, y: 0 },
+      { id: 'R1', kind: 'router', label: 'R1', x: 1000, y: 0 },
+      { id: 'R2', kind: 'router', label: 'R2', x: 0, y: 420 },
+      { id: 'R3', kind: 'router', label: 'R3', x: 1000, y: 420 },
+      { id: 'D', kind: 'host', label: 'Servers', x: 1000, y: 840 },
+      { id: 'O', kind: 'host', label: b.name, x: 0, y: 840 },
+    ],
+    links: [
+      { id: 'a', a: { device: 'S', port: '' }, b: { device: 'R1', port: 'Gi0/0' }, speed: 1000 },
+      {
+        id: 'b',
+        a: { device: 'R1', port: 'Gi0/1' },
+        b: { device: 'R2', port: 'Gi0/0' },
+        speed: 1000,
+      },
+      {
+        id: 'c',
+        a: { device: 'R2', port: 'Gi0/1' },
+        b: { device: 'R3', port: 'Gi0/0' },
+        speed: 1000,
+      },
+      { id: 'd', a: { device: 'R3', port: 'Gi0/1' }, b: { device: 'D', port: '' }, speed: 1000 },
+      { id: 'e', a: { device: 'R3', port: 'Gi0/2' }, b: { device: 'O', port: '' }, speed: 1000 },
+    ],
+  }
+  // The test volley: one packet the policy drops and two it lets through.
+  const volley = [
+    {
+      what: `${a.name} → web server`,
+      from: 'S',
+      to: 'D',
+      pass: false,
+      p: {
+        protocol: 'tcp',
+        src: inNet(rng, a),
+        dst: c.servers.web,
+        srcPort: 50000,
+        dstPort: 443,
+      } as Packet,
+    },
+    {
+      what: `${a.name} → ${b.name}`,
+      from: 'S',
+      to: 'O',
+      pass: true,
+      p: { protocol: 'icmp', src: inNet(rng, a), dst: inNet(rng, b) } as Packet,
+    },
+    {
+      what: `${b.name} → web server`,
+      from: 'O',
+      to: 'D',
+      pass: true,
+      p: {
+        protocol: 'tcp',
+        src: inNet(rng, b),
+        dst: c.servers.web,
+        srcPort: 50000,
+        dstPort: 443,
+      } as Packet,
+    },
+  ].map((v) => {
+    const hops = pathBetween(topo, v.from, v.to) ?? []
+    return { ...v, hops, crossings: crossingsOf(hops) }
+  })
+  // Options: every interface the team's traffic crosses, applied in that direction.
+  const options: PathCrossing[] = []
+  for (const v of volley.slice(0, 2))
+    for (const x of v.crossings)
+      if (!options.some((o) => o.device === x.device && o.port === x.port)) options.push(x)
+  const id = (x: PathCrossing) => `${x.device}:${x.port}`
+  const name = (x: PathCrossing) => `${x.device} ${x.port} ${x.dir}`
+  const answerX = options.find(
+    (o) =>
+      standard
+        ? o.device === 'R3' && o.port === 'Gi0/1' // as close to the destination as possible
+        : o.device === 'R1' && o.port === 'Gi0/0', // as close to the source as possible
+  ) as PathCrossing
+  const diagram: TopologyVisual = {
+    kind: 'topology',
+    caption: `In or out, as ${a.name} traffic goes`,
+    topology: topo,
+    showPorts: true,
+  }
+  const runs = (at: PathCrossing) =>
+    volley.map((v) => ({ v, run: runAclOnPath(v.crossings, at, acl, v.p) }))
+  const outcome = (at: PathCrossing): TapAfter => {
+    const flows: PacketFlow[] = []
+    const rows: string[][] = []
+    runs(at).forEach(({ v, run }, k) => {
+      const drop = run.droppedAt === null ? null : (v.crossings[run.droppedAt] as PathCrossing)
+      // Dropped inbound: it crossed the link into the port. Outbound: it stopped before it.
+      const last = drop ? (drop.dir === 'in' ? drop.hop : drop.hop - 1) : v.hops.length - 1
+      v.hops.slice(0, last + 1).forEach((h, i) =>
+        flows.push({
+          link: h.link.id,
+          from: h.from,
+          label: String(k + 1),
+          delayMs: k * VOLLEY_GAP_MS + i * HOP_MS,
+          ...(i < last ? { fades: true } : drop ? { dropped: true } : {}),
+        }),
+      )
+      const ok = run.delivered === v.pass
+      rows.push([
+        String(k + 1),
+        v.what,
+        `${drop ? `Dropped at ${drop.device}` : 'Delivered'} ${ok ? '✓' : '✗'}`,
+      ])
+    })
+    const table: TableVisual = {
+      kind: 'table',
+      caption: `ACL on ${name(at)}`,
+      columns: ['#', 'Packet', 'Result'],
+      rows,
+    }
+    return {
+      diagram: { ...diagram, highlightPorts: [{ device: at.device, port: at.port }], flows },
+      visuals: [table],
+    }
+  }
+  const whyWrong = (at: PathCrossing): string => {
+    const misses = runs(at).filter(({ v, run }) => run.delivered !== v.pass)
+    const blocked = misses.find(({ v }) => v.pass)
+    if (blocked)
+      return `There it also drops ${blocked.v.what}: a standard ACL only sees the source address, so it blocks ${a.name} from everything past that point.`
+    const missed = misses.find(({ v }) => !v.pass)
+    if (missed)
+      return `${a.name}'s traffic to the servers never crosses ${name(at)}, so nothing stops it.`
+    // Links the unwanted packet crossed before the drop (an outbound drop stops short of one).
+    const links = at.dir === 'in' ? at.hop + 1 : at.hop
+    return links > 1
+      ? `The volley comes out right, but the unwanted packets cross ${links} links before ${at.device} drops them.`
+      : `The volley comes out right, but ${at.device} still has to route the unwanted packets before dropping them.`
+  }
+  const ifName = answerX.port.replace('Gi', 'GigabitEthernet')
+  return {
+    prompt: `Stop ${a.name} reaching the servers: tap the port for this ACL.`,
+    diagram,
+    afterFor: Object.fromEntries(options.map((o) => [id(o), outcome(o)])),
+    afterTitle: 'Test volley',
+    visuals: [{ kind: 'code', caption: '', lines: formatAclConfig(acl) }],
+    options: options.map(id),
+    answer: id(answerX),
+    names: Object.fromEntries(options.map((o) => [id(o), name(o)])),
+    whyWrong: Object.fromEntries(
+      options.filter((o) => o !== answerX).map((o) => [id(o), whyWrong(o)]),
+    ),
+    explanation: `${
+      standard
+        ? 'A standard ACL matches only the source, so it goes as close to the destination as possible'
+        : 'An extended ACL matches the exact traffic, so it goes as close to the source as possible and the unwanted packets never use the network'
+    }: on ${answerX.device}, interface ${ifName}, ip access-group ${acl.id} ${answerX.dir}.`,
+    hint: 'Standard: near the destination. Extended: near the source.',
+  }
+}
+
 // ---------- Break-Fix: which line is wrong? ----------
 
 function breakfixQuestion(rng: Rng): ChoiceQuestion {
@@ -663,8 +963,12 @@ export function makeQuestion(params: BouncerParams, seed: number, step: number):
       return wildcardQuestion(rng)
     case 'builder':
       return { kind: 'choice', q: builderQuestion(rng) }
+    case 'build-tiles':
+      return { kind: 'tiles', q: buildTilesQuestion(rng) }
     case 'placement':
       return { kind: 'choice', q: placementQuestion(rng) }
+    case 'place-test':
+      return { kind: 'tap', q: placeTestQuestion(rng) }
     case 'breakfix':
       return { kind: 'choice', q: breakfixQuestion(rng) }
   }

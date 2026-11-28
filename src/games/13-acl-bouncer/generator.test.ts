@@ -1,6 +1,7 @@
 import fc from 'fast-check'
 import { describe, expect, it } from 'vitest'
 import { checkMixed } from '../../app/frame/mixed'
+import { checkTiles, fillLines } from '../../app/frame/tiles'
 import { parseIPv4 } from '../../core/netmath'
 import { makeQuestion } from './generator'
 import { LEVELS } from './levels'
@@ -96,5 +97,60 @@ describe('ACL Bouncer generator', () => {
       }
     }
     expect(seen).toEqual(new Set(['Deny', 'Permit']))
+  })
+
+  it('place it and test it: the volley results follow a hand-worked table of paths', () => {
+    // The team's traffic to the servers crosses these, in order; to the other team it leaves
+    // R3 by Gi0/2 instead. The other team's traffic to the servers only crosses R3.
+    const early = ['R1:Gi0/0', 'R1:Gi0/1', 'R2:Gi0/0', 'R2:Gi0/1', 'R3:Gi0/0']
+    for (let s = 0; s < 60; s++) {
+      const m = makeQuestion({ kinds: ['place-test'] }, s, 0)
+      if (m.kind !== 'tap') throw new Error('tap')
+      const q = m.q
+      const standard =
+        q.visuals?.[0]?.kind === 'code' && /standard/.test(q.visuals[0].lines[0] ?? '')
+      expect(q.options).toEqual([...early, 'R3:Gi0/1', 'R3:Gi0/2'])
+      expect(q.answer).toBe(standard ? 'R3:Gi0/1' : 'R1:Gi0/0')
+      for (const o of q.options) {
+        // ✓/✗ per packet: 1 team → servers (drop), 2 team → other team, 3 other team → servers.
+        const want =
+          o === 'R3:Gi0/2'
+            ? ['✗', standard ? '✗' : '✓', '✓']
+            : standard && early.includes(o)
+              ? ['✓', '✗', '✓']
+              : ['✓', '✓', '✓']
+        const table = q.afterFor?.[o]?.visuals?.[0]
+        if (table?.kind !== 'table') throw new Error('table')
+        expect(
+          table.rows.map((r) => r[2]?.slice(-1)),
+          `${s} ${o}`,
+        ).toEqual(want)
+        if (o !== q.answer) expect(q.whyWrong?.[o]).toBeTruthy()
+      }
+    }
+  })
+
+  it('build the ACL: the right tiles pass, every wrong tile is shown failing test packets', () => {
+    fc.assert(
+      fc.property(seed, (s) => {
+        const m = makeQuestion({ kinds: ['build-tiles'] }, s, 0)
+        if (m.kind !== 'tiles') throw new Error('tiles')
+        const q = m.q
+        expect(checkTiles(q, q.answers).correct).toBe(true)
+        expect(fillLines(q, q.answers).join('\n')).not.toContain('___')
+        expect(q.lines[0]).toMatch(/^ip access-list (standard|extended) \S+$/)
+        q.answers.forEach((a, i) => {
+          expect(q.chips).toContain(a)
+          const why = q.chipWhy?.[i] ?? {}
+          expect(Object.keys(why).length).toBeGreaterThan(0)
+          for (const [chip, text] of Object.entries(why)) {
+            expect(chip).not.toBe(a)
+            expect(q.chips).toContain(chip)
+            expect(text).toMatch(/\d+ of \d+ test packets go the wrong way/)
+          }
+        })
+      }),
+      { numRuns: 300 },
+    )
   })
 })
