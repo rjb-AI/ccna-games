@@ -21,6 +21,12 @@ export interface LabelsQuestion {
    * the same option (for example Wi-Fi channel plans). `answers` then holds one valid example.
    */
   distinctNeighbors?: Readonly<Record<string, readonly string[]>>
+  /**
+   * How to draw it. 'list' (default): every item with a row of option buttons. 'bins': one card
+   * at a time, sorted into a fixed grid of equal-size bins (BinsView). Options are always shown
+   * in the order given, so keep that order the same across a level.
+   */
+  display?: 'list' | 'bins'
 }
 
 export type LabelsResponse = Readonly<Record<string, string>>

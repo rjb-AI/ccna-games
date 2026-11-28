@@ -954,3 +954,128 @@ a.btn {
   font-size: 22px;
   font-weight: 700;
 }
+
+/* Sort into bins (BinsView): the deck on top, a fixed grid of equal-size bins below. */
+.bins-deck {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-1);
+  min-height: 96px;
+}
+
+.bins-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 96px;
+  padding: var(--space-1) var(--space-2);
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius);
+  background-color: var(--color-surface);
+  box-shadow: 0 4px 0 var(--color-border);
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+  position: relative;
+  z-index: 1;
+}
+
+.bins-card.is-dragging {
+  cursor: grabbing;
+  z-index: 3;
+}
+
+.bins-card-text {
+  font-weight: 700;
+  font-size: var(--font-size-h2);
+  line-height: 1.3;
+}
+
+.bins-left {
+  color: var(--color-text-muted);
+}
+
+.bins-done {
+  align-self: center;
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.bins-grid {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
+}
+
+button.bin-head {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 64px;
+  padding: 4px 4px 22px;
+  font-size: var(--font-size-body);
+  font-weight: 700;
+  overflow-wrap: break-word;
+  line-height: 1.2;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  border: 2px dashed var(--color-border);
+}
+
+button.bin-head:not(:disabled):hover,
+button.bin-head:not(:disabled):focus-visible {
+  border-color: var(--color-accent);
+}
+
+.bin-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.bin-count {
+  position: absolute;
+  bottom: 0;
+  right: 6px;
+  font-size: var(--font-size-small);
+  color: var(--color-accent);
+}
+
+button.bin-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: 4px var(--space-1);
+  text-align: left;
+  font-weight: 400;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+
+.bin-cards li.is-right button.bin-card {
+  border-color: var(--color-good);
+}
+
+.bin-cards li.is-wrong button.bin-card {
+  border-color: var(--color-bad);
+}
+
+.bin-card-bin {
+  flex: 0 0 auto;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.bin-cards .mark {
+  color: var(--color-bad);
+  font-weight: 700;
+}

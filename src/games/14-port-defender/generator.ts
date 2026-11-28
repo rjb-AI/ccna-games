@@ -140,6 +140,7 @@ function trustQuestion(rng: Rng): LabelsQuestion {
       label: `${p.name} (${p.role === 'uplink' && s.serverLocal ? 'uplink to the core router' : ROLE_TEXT[p.role]})`,
     })),
     options: ['Trusted', 'Untrusted'],
+    display: 'bins',
     answers: Object.fromEntries(
       s.ports.map((p) => [p.name, correctTrust(p.role) ? 'Trusted' : 'Untrusted']),
     ),

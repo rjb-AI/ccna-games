@@ -21,6 +21,7 @@ import {
   type DnsProblem,
   type DnsRecord,
   RECORD_MEANING,
+  RECORD_TYPES,
   type RecordType,
   mailProblems,
   ptrProblems,
@@ -42,7 +43,10 @@ function recordsQuestion(rng: Rng): LabelsQuestion {
   return {
     prompt: 'Which record type does each job?',
     items: rng.shuffle(meanings).map((m) => ({ id: m, label: m })),
-    options: types,
+    // Every record type, always in the same order, so the buttons become muscle memory. The one
+    // not asked about is a spare.
+    options: RECORD_TYPES,
+    display: 'bins',
     answers: Object.fromEntries(types.map((t) => [RECORD_MEANING[t], t])),
     explanation:
       (Object.keys(RECORD_MEANING) as RecordType[])

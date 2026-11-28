@@ -62,6 +62,26 @@ test('domain chips hide sections, and the choice is remembered', async ({ page }
   await chip.click()
   await expect(chip).toHaveAttribute('aria-pressed', 'false')
   await expect(ops).toHaveCount(0)
+  // The choice is saved to IndexedDB in the background: wait until it is there, then reload.
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          new Promise<string>((resolve) => {
+            const open = indexedDB.open('ccna-games')
+            open.onsuccess = () => {
+              const get = open.result
+                .transaction('settings')
+                .objectStore('settings')
+                .get('settings')
+              get.onsuccess = () => resolve(JSON.stringify(get.result?.value?.hiddenDomains ?? []))
+              get.onerror = () => resolve('[]')
+            }
+            open.onerror = () => resolve('[]')
+          }),
+      ),
+    )
+    .toContain('domain-5')
   await page.reload()
   await expect(page.getByRole('heading', { level: 1, name: 'CCNA Games' })).toBeVisible()
   await expect(ops).toHaveCount(0)

@@ -97,6 +97,7 @@ function sshNeeded(rng: Rng): LabelsQuestion {
       'You want admins to log in to this router with SSH and local usernames. Which commands are needed?',
     items: items.map((i, n) => ({ id: String(n), label: i.cmd })),
     options: ['Needed', 'Not needed'],
+    display: 'bins',
     answers: Object.fromEntries(
       items.map((i, n) => [String(n), i.needed ? 'Needed' : 'Not needed']),
     ),
@@ -187,6 +188,7 @@ function aaaSort(rng: Rng): LabelsQuestion {
     prompt: 'TACACS+ or RADIUS?',
     items: facts.map((f, i) => ({ id: String(i), label: f.text })),
     options: ['TACACS+', 'RADIUS', 'Both'],
+    display: 'bins',
     answers: Object.fromEntries(facts.map((f, i) => [String(i), f.who])),
     explanation:
       'TACACS+: TCP 49, whole body encrypted, the three A’s separate (good for device admin). RADIUS: UDP 1812/1813, only the password encrypted, authentication and authorization combined (good for network access like 802.1X).',
@@ -233,6 +235,7 @@ function filesQuestion(rng: Rng): MixedQuestion {
         'You copy a new IOS image to a router. Which of these protect the transfer with encryption?',
       items: rng.shuffle(protos).map((x) => ({ id: x.p, label: x.p })),
       options: ['Encrypted', 'Not encrypted'],
+      display: 'bins',
       answers: Object.fromEntries(
         protos.map((x) => [x.p, x.secure ? 'Encrypted' : 'Not encrypted']),
       ),
