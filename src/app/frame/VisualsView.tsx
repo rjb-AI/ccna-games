@@ -1,5 +1,5 @@
 import { TopologyView } from '../topology/TopologyView'
-import type { TableVisual, Visual } from './visuals'
+import type { CodeVisual, TableVisual, Visual } from './visuals'
 
 /** Allow line breaks only after dots, commas and slashes (MACs, IPs, VLAN lists). */
 function breakable(text: string) {
@@ -46,12 +46,33 @@ function TableView({ v }: { v: TableVisual }) {
   )
 }
 
+function CodeView({ v }: { v: CodeVisual }) {
+  return (
+    <figure className="qcode">
+      <figcaption>{v.caption}</figcaption>
+      <ol>
+        {v.lines.map((l, i) => (
+          <li key={i} className={i === v.highlightLine ? 'is-hot' : undefined}>
+            <code>{l}</code>
+          </li>
+        ))}
+      </ol>
+    </figure>
+  )
+}
+
 export function Visuals({ visuals }: { visuals?: readonly Visual[] }) {
   if (!visuals?.length) return null
   return (
     <>
       {visuals.map((v, i) =>
-        v.kind === 'topology' ? <TopologyView key={i} v={v} /> : <TableView key={i} v={v} />,
+        v.kind === 'topology' ? (
+          <TopologyView key={i} v={v} />
+        ) : v.kind === 'code' ? (
+          <CodeView key={i} v={v} />
+        ) : (
+          <TableView key={i} v={v} />
+        ),
       )}
     </>
   )

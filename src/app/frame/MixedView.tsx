@@ -1,6 +1,10 @@
 import { ChoiceView } from './ChoiceView'
 import { FieldsView } from './FieldsView'
 import { LabelsView } from './LabelsView'
+import { OrderView } from './OrderView'
+import type { FieldsResponse } from './fields'
+import type { LabelsResponse } from './labels'
+import type { OrderResponse } from './order'
 import type { MixedQuestion, MixedResponse } from './mixed'
 import type { QuestionViewProps } from './types'
 
@@ -11,7 +15,20 @@ export function MixedView(props: QuestionViewProps<MixedQuestion, MixedResponse>
       <FieldsView
         {...rest}
         question={m.q}
-        response={response === null || typeof response === 'string' ? null : response}
+        response={
+          response === null || typeof response === 'string' || Array.isArray(response)
+            ? null
+            : (response as FieldsResponse)
+        }
+      />
+    )
+  }
+  if (m.kind === 'order') {
+    return (
+      <OrderView
+        {...rest}
+        question={m.q}
+        response={Array.isArray(response) ? (response as OrderResponse) : null}
       />
     )
   }
@@ -20,7 +37,11 @@ export function MixedView(props: QuestionViewProps<MixedQuestion, MixedResponse>
       <LabelsView
         {...rest}
         question={m.q}
-        response={response === null || typeof response === 'string' ? null : response}
+        response={
+          response === null || typeof response === 'string' || Array.isArray(response)
+            ? null
+            : (response as LabelsResponse)
+        }
       />
     )
   }

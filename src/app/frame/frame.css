@@ -384,6 +384,12 @@ button {
 .choice-list.is-mono .choice-btn span:first-child {
   font-family: var(--font-mono);
   overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.facts dd.is-prose {
+  font-family: var(--font-body);
+  font-weight: 600;
 }
 
 .feedback p,
@@ -459,4 +465,81 @@ button {
 
 button:disabled {
   cursor: default;
+}
+
+/* Put in order */
+.order-seq {
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.order-seq li {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius);
+  min-height: 52px;
+}
+
+.order-seq li.is-set {
+  border-style: solid;
+  border-color: var(--color-accent);
+}
+
+.order-seq li.is-right {
+  border-style: solid;
+  border-color: var(--color-good);
+}
+
+.order-seq li.is-wrong {
+  border-style: solid;
+  border-color: var(--color-bad);
+}
+
+.order-seq button,
+.order-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-1) var(--space-2);
+  text-align: left;
+  color: var(--color-text);
+  background: none;
+  font-weight: 600;
+}
+
+.order-empty {
+  color: var(--color-text-muted);
+}
+
+.order-n {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 2ch;
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+}
+
+.order-seq .mark {
+  display: block;
+  padding: 0 var(--space-2) var(--space-1);
+  color: var(--color-bad);
+  font-weight: 700;
+}
+
+.order-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.order-pool button {
+  min-height: var(--tap-min);
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-border);
+  font-weight: 600;
 }

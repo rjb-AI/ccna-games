@@ -34,4 +34,12 @@ export interface TableVisual {
   empty?: string
 }
 
-export type Visual = TopologyVisual | TableVisual
+export interface CodeVisual {
+  kind: 'code'
+  caption: string
+  /** Configuration lines (input syntax), numbered on screen. */
+  lines: readonly string[]
+  highlightLine?: number
+}
+
+export type Visual = TopologyVisual | TableVisual | CodeVisual
