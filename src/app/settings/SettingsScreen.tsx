@@ -112,6 +112,15 @@ export function SettingsScreen() {
           {message}
         </p>
       )}
+      <h2>About</h2>
+      <p className="seed">
+        Version {__APP_VERSION__}, built{' '}
+        {new Date(__BUILD_TIME__).toLocaleString(undefined, {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        })}
+        .
+      </p>
     </main>
   )
 }
