@@ -29,7 +29,7 @@ export function TapView({
         v={q.diagram}
         pick={{
           options: q.options,
-          picked: shown,
+          picked: shown ? [shown] : [],
           ...(marks ? { marks } : {}),
           disabled: answered,
           onPick: setPicked,

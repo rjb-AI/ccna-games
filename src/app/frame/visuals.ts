@@ -29,6 +29,18 @@ export interface TopologyVisual {
   /** Ports and devices that carry a tappable label badge (labels drawn on the diagram). */
   badgePorts?: readonly Endpoint[]
   badgeDevices?: readonly string[]
+  /** Packets that travel along links (the packet path replay), each from one end to the other. */
+  flows?: readonly PacketFlow[]
+}
+
+/** One packet moving along a link, starting at device `from`. */
+export interface PacketFlow {
+  link: string
+  from: string
+  /** Text that rides with the packet, for example "tag 10". */
+  label?: string
+  /** Start after this many ms (later hops of a path). */
+  delayMs?: number
 }
 
 export interface TableVisual {

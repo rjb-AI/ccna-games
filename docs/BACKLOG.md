@@ -8,7 +8,8 @@ of each column.
 
 - **Game-like mechanics, in the MECHANICS.md build order** (user: "do them in the order you
   suggested"). Steps 1-6 done (bins, tap the diagram, labels on the diagram, swipe deck, bit
-  board, match pairs and code tiles). Now: step 7, packet path; then match pairs and code tiles, packet path, grid placement. Still to
+  board, match pairs and code tiles). Now: step 7, packet path (part 1 done: be the switch; next:
+  Packet Passport hop-by-hop stamps, then replays for STP, FHRP and ACL); then match pairs and code tiles, packet path, grid placement. Still to
   move onto the diagram: Airwaves channels (needs a floor-plan visual), AP ports. Before each: inspiration from `docs/INSPIRATION.md` (user: look up
   games of each type first). Still to move onto tapping: Neighbor Detective (tap the mistake),
   Longest Match rows, ACL/YAML bad line, router ID row.
@@ -62,6 +63,14 @@ Reusable interaction kinds, then which games use them:
 - **Fix the file**: Playbook Runner, tap lines to indent/outdent YAML.
 
 ## Done
+
+- 28 Nov: **Packet path, part 1: be the switch** (mechanics step 7). New kind `exits`
+  (`ExitsView`): tap every port a frame leaves by, or "Filter or drop it". It draws as a switch
+  faceplate (one card per port with what is plugged in and its VLAN), because a star diagram
+  crowded the port names on a phone. Exits get a packet chip ("➜ tag 10") and can be replayed.
+  The diagram also supports multi-pick and packets moving along links (`flows`), for later
+  replays. Frame Run: be the switch, with a trunk, and as both switches. Wrong ports name the
+  rule they break.
 
 - 28 Nov: **Match pairs and code tiles** (mechanics step 6). Match pairs (`PairsView`): tap one
   card on each side; both cards show the pair's number, and tapping again moves the link. Code

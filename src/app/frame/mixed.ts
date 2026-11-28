@@ -9,6 +9,7 @@ import { type FieldsQuestion, type FieldsResponse, checkFields, describeFields }
 import { type LabelsQuestion, type LabelsResponse, checkLabels, describeLabels } from './labels'
 import { type OrderQuestion, type OrderResponse, checkOrder, describeOrder } from './order'
 import { type BitsQuestion, checkBits, describeBits } from './bits'
+import { type ExitsQuestion, type ExitsResponse, checkExits, describeExits } from './exits'
 import { type TilesQuestion, type TilesResponse, checkTiles, describeTiles } from './tiles'
 import { type TapQuestion, checkTap, describeTap } from './tap'
 import { type WiresQuestion, type WiresResponse, checkWires, describeWires } from './wires'
@@ -23,6 +24,7 @@ export type MixedQuestion =
   | { kind: 'tap'; q: TapQuestion }
   | { kind: 'bits'; q: BitsQuestion }
   | { kind: 'tiles'; q: TilesQuestion }
+  | { kind: 'exits'; q: ExitsQuestion }
 
 export type MixedResponse =
   number | string | FieldsResponse | LabelsResponse | OrderResponse | CliResponse | WiresResponse
@@ -52,6 +54,8 @@ export function checkMixed(m: MixedQuestion, r: MixedResponse): Check {
       return checkTap(m.q, typeof r === 'string' ? r : '')
     case 'bits':
       return checkBits(m.q, typeof r === 'number' ? r : -1)
+    case 'exits':
+      return checkExits(m.q, Array.isArray(r) ? (r as ExitsResponse) : [])
     case 'tiles':
       return checkTiles(m.q, Array.isArray(r) ? (r as TilesResponse) : [])
     case 'wires':
@@ -82,6 +86,8 @@ export function describeMixed(m: MixedQuestion): string {
       return describeBits(m.q)
     case 'tiles':
       return describeTiles(m.q)
+    case 'exits':
+      return describeExits(m.q)
   }
 }
 
@@ -101,6 +107,8 @@ export function rightResponse(m: MixedQuestion): MixedResponse {
       return m.q.target
     case 'tiles':
       return m.q.answers
+    case 'exits':
+      return m.q.answer
     case 'cli':
       return { lines: m.q.solution }
   }

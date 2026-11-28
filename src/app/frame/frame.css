@@ -1497,3 +1497,108 @@ button.pair-card.is-wrong {
   color: var(--color-bad);
   font-weight: 700;
 }
+
+/* Be the device (ExitsView): the result line with a replay button. */
+.exits-result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-1);
+  font-weight: 700;
+}
+
+/* Device faceplate (ExitsView panel): one card per port, two per row on a phone. */
+.faceplate {
+  margin: 0 0 var(--space-1);
+}
+
+.faceplate figcaption {
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.faceplate-ports {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+}
+
+button.port-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 64px;
+  padding: 6px 10px;
+  text-align: left;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-border);
+  overflow: hidden;
+}
+
+.port-name {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.port-in {
+  color: var(--color-focus);
+}
+
+.port-note {
+  font-weight: 400;
+}
+
+button.port-card.is-arrived {
+  border-color: var(--color-focus);
+  border-style: dashed;
+}
+
+button.port-card.is-picked {
+  border-color: var(--color-accent);
+  border-width: 3px;
+  border-style: solid;
+}
+
+button.port-card.is-right {
+  border-color: var(--color-good);
+  border-style: solid;
+}
+
+button.port-card.is-wrong {
+  border-color: var(--color-bad);
+  border-style: solid;
+}
+
+.port-mark {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  font-weight: 700;
+}
+
+/* The packet leaving an exit: slides in from the left edge and stays. */
+.port-packet {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--color-accent);
+  animation: port-packet 700ms ease-out both;
+}
+
+@keyframes port-packet {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .port-packet {
+    animation: none;
+  }
+}

@@ -9,6 +9,7 @@ import { TapView } from './TapView'
 import { TilesView } from './TilesView'
 import { WireBoardView } from './WireBoardView'
 import type { WiresResponse } from './wires'
+import { ExitsView } from './ExitsView'
 import { FieldsView } from './FieldsView'
 import { LabelsView } from './LabelsView'
 import { OrderView } from './OrderView'
@@ -35,6 +36,15 @@ export function MixedView(props: QuestionViewProps<MixedQuestion, MixedResponse>
         {...rest}
         question={m.q}
         response={response !== null && isCli(response) ? response : null}
+      />
+    )
+  }
+  if (m.kind === 'exits') {
+    return (
+      <ExitsView
+        {...rest}
+        question={m.q}
+        response={Array.isArray(response) ? (response as readonly string[]) : null}
       />
     )
   }

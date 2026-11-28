@@ -4,6 +4,8 @@
  * learned so far. Every answer comes from core/sim/l2 (processFrame, deliver, diagnoseL2).
  */
 import type { ChoiceQuestion } from '../../app/frame/choice'
+import type { ExitsQuestion } from '../../app/frame/exits'
+import type { MixedQuestion } from '../../app/frame/mixed'
 import type { Fact } from '../../app/frame/fields'
 import type { TableVisual, TopologyVisual } from '../../app/frame/visuals'
 import {
@@ -37,6 +39,8 @@ export type FrameRunParams =
       learnQuestions: boolean
       /** Insert a long pause so old MAC entries age out. */
       aging: boolean
+      /** Answer by tapping the exit ports on the diagram (be the switch). */
+      exits?: boolean
     }
   | { scenario: 'breakfix' }
 
@@ -478,6 +482,83 @@ function actionQuestion(rng: Rng, s: Scenario, step: number): ChoiceQuestion {
   }
 }
 
+/**
+ * Be the switch: tap every port the frame leaves by. The answer and the replay both come from
+ * processFrame's egress list; each wrong port gets the rule it breaks.
+ */
+function exitsQuestion(s: Scenario, step: number): ExitsQuestion {
+  const st = s.steps[step] as Scenario['steps'][number]
+  const swc = s.net.switches[st.switchId] as SwitchConfig
+  const table = replay(s, step)[st.switchId] ?? []
+  const r = processFrame(swc, table, st.ingress, st.frame, st.now)
+  const live = activeEntries(table, st.now)
+  const id = (p: string) => `${st.switchId}:${p}`
+  const linkAt = (p: string) =>
+    s.topology.links.find((l) => [l.a, l.b].some((e) => e.device === st.switchId && e.port === p))
+  const drawn = swc.ports.filter((p) => linkAt(p.name))
+  const known = live.find((e) => e.vlan === r.vlan && e.mac === st.frame.dst)
+  const whyWrong: Record<string, string> = {}
+  for (const p of drawn) {
+    if (r.out.some((o) => o.port === p.name)) continue
+    whyWrong[id(p.name)] =
+      p.name === st.ingress
+        ? 'A switch never sends a frame back out of the port it came in on.'
+        : r.vlan === null
+          ? 'The frame was dropped on arrival, so it leaves by no port.'
+          : !carriesVlan(p, r.vlan)
+            ? `${p.name} is not in VLAN ${r.vlan}. A frame never leaves its VLAN.`
+            : known
+              ? `${st.frame.dst} is in the MAC table on ${known.port}, so only that port.`
+              : `${p.name} is in VLAN ${r.vlan}, but the switch only floods unknown or broadcast frames.`
+  }
+  const tagText = (v: number | undefined) => (v === undefined ? undefined : `tag ${v}`)
+  const [, hostsTable, macTable] = visuals(s, st.switchId, st.ingress, table, st.now)
+  const learnedText = r.learned
+    ? ` It learns ${r.learned.mac} on ${r.learned.port} in VLAN ${r.learned.vlan}.`
+    : ''
+  /** What is plugged into a port, as on the faceplate. */
+  const note = (p: SwitchPort): string => {
+    if (p.mode === 'trunk') {
+      const far = linkAt(p.name)
+      const peer = far && (far.a.device === st.switchId ? far.b.device : far.a.device)
+      return `trunk to ${peer ?? '?'} · native ${p.nativeVlan}`
+    }
+    const h = s.hosts.find((x) => x.switchId === st.switchId && x.port === p.name && !x.remote)
+    return `${h?.id ?? '—'} · VLAN ${p.accessVlan}`
+  }
+  // The hosts table lists only the hosts not on the faceplate (beyond a trunk).
+  const away = s.hosts.filter((h) => h.remote || h.switchId !== st.switchId).map((h) => h.id)
+  const remote = away.length > 0
+  const awayTable = {
+    ...hostsTable,
+    caption: 'Hosts beyond the trunk',
+    rows: hostsTable.rows.filter((r) => away.includes(r[0] as string)),
+  }
+  return {
+    prompt: `You are ${st.switchId}. Tap every port this frame leaves by.`,
+    facts: frameFacts(s, st),
+    panel: {
+      caption: `${st.switchId} ports`,
+      notes: Object.fromEntries(drawn.map((p) => [id(p.name), note(p)])),
+      arrived: id(st.ingress),
+      exitLabels: Object.fromEntries(
+        r.out.map((o) => [
+          id(o.port),
+          o.tagged ? (tagText(r.vlan ?? undefined) ?? '') : 'untagged',
+        ]),
+      ),
+    },
+    visuals: remote ? [awayTable, macTable] : [macTable],
+    options: drawn.map((p) => id(p.name)),
+    answer: r.out.map((o) => id(o.port)),
+    noneLabel: 'Filter or drop it',
+    names: Object.fromEntries(drawn.map((p) => [id(p.name), p.name])),
+    whyWrong,
+    explanation: `${r.reason}${learnedText}`,
+    hint: 'First the VLAN. Broadcast or unknown: every other port in that VLAN. Known: just its port. Known on the arrival port: none.',
+  }
+}
+
 function frameFacts(s: Scenario, st: Scenario['steps'][number]): Fact[] {
   const facts: Fact[] = [
     { label: 'Arrives on', value: `${st.switchId} ${st.ingress}` },
@@ -633,11 +714,13 @@ function breakfixQuestion(seed: number, step: number): ChoiceQuestion {
   }
 }
 
-export function makeQuestion(params: FrameRunParams, seed: number, step: number): ChoiceQuestion {
-  if (params.scenario === 'breakfix') return breakfixQuestion(seed, step)
+export function makeQuestion(params: FrameRunParams, seed: number, step: number): MixedQuestion {
+  if (params.scenario === 'breakfix') return { kind: 'choice', q: breakfixQuestion(seed, step) }
   // Build enough steps for any level; the scenario is the same for every step of a session.
   const s = buildScenario(params, seed, 16)
   const rng = createRng(`${seed}:${step}:frame-run-q`)
   const i = step % s.steps.length
-  return params.learnQuestions && i % 3 === 2 ? learnQuestion(rng, s, i) : actionQuestion(rng, s, i)
+  if (params.learnQuestions && i % 3 === 2) return { kind: 'choice', q: learnQuestion(rng, s, i) }
+  if (params.exits) return { kind: 'exits', q: exitsQuestion(s, i) }
+  return { kind: 'choice', q: actionQuestion(rng, s, i) }
 }
