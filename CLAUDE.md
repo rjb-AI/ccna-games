@@ -135,7 +135,7 @@ tests/e2e/                 ← Playwright tests
   `BitsView` (the bit board), `ExitsView` (be the device: tap every port a packet leaves by, on
   the diagram or a device faceplate; the real result replays as packets moving, `flows`),
   `WireBoardView` (drag wires onto connectors), `TapView` (answer by
-  tapping a switch or port on a topology), `CliView` (the command line). Mix them in one game
+  tapping a switch or port on a topology; `after` shows what happens next), `CliView` (the command line). Mix them in one game
   with `MixedView`. Diagrams must fit a 390px phone (layout.ts decides; `layout.test.ts`
   enforces it): ports become tap-to-read dots before anything scrolls sideways. Any question can show `visuals`: topology
   diagrams (`src/app/topology`), tables, and numbered configuration lines. Build new kinds and

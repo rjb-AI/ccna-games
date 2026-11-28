@@ -5,8 +5,10 @@
  */
 import type { ChoiceQuestion } from '../../app/frame/choice'
 import type { MixedQuestion } from '../../app/frame/mixed'
+import type { TapQuestion } from '../../app/frame/tap'
+import type { TopologyVisual } from '../../app/frame/visuals'
 import { formatIPv4, parseIPv4 } from '../../core/netmath'
-import { type Rng, stepRng } from '../../core/rng'
+import { type Rng, createRng, stepRng } from '../../core/rng'
 import {
   ACTIVE_WORD,
   type Fhrp,
@@ -18,7 +20,7 @@ import {
   virtualMac,
 } from '../../core/sim/l3'
 
-export type GuardKind = 'active' | 'failover' | 'vmac' | 'facts'
+export type GuardKind = 'active' | 'failover' | 'vmac' | 'facts' | 'plug'
 export interface GuardParams {
   kinds: readonly GuardKind[]
 }
@@ -38,8 +40,9 @@ function routers(rng: Rng, p: Fhrp): FhrpRouter[] {
 function table(rs: readonly FhrpRouter[], p: Fhrp, group: number) {
   return {
     kind: 'table' as const,
-    caption: `${p} group ${group} settings (from the device model)`,
-    columns: ['Router', 'Interface IP', 'Priority', 'Preempt'],
+    caption: `${p} group ${group} settings`,
+    // "Pri" as in show standby brief / show vrrp brief column headings.
+    columns: ['Router', 'IP', 'Pri', 'Preempt'],
     rows: rs.map((r) => [r.name, formatIPv4(r.ip), String(r.priority), r.preempt ? 'yes' : 'no']),
   }
 }
@@ -130,6 +133,101 @@ function vmacQuestion(rng: Rng): ChoiceQuestion {
   }
 }
 
+/** Steps in one "pull the plug" story: who is active, who takes over, who is active after. */
+export const PLUG_STEPS = 3
+
+/**
+ * Pull the plug: one LAN, two or three routers sharing a virtual gateway. Tap who is active,
+ * then the active router fails (tap who takes over), then it returns (tap who is active now).
+ * After each answer, host traffic flows to the router that really forwards it (core
+ * electFhrp and failover).
+ */
+function plugQuestion(seed: number, step: number): TapQuestion {
+  const round = Math.floor(step / PLUG_STEPS)
+  const phase = step % PLUG_STEPS
+  const rng = createRng(`${seed}:gateway-plug:${round}`)
+  const p = rng.pick(['HSRPv2', 'VRRP'] as Fhrp[])
+  const rs = routers(rng, p)
+  const group = rng.int(1, 200)
+  const { active } = electFhrp(rs)
+  const f = failover(rs)
+  const w = ACTIVE_WORD[p].active.toLowerCase()
+  const n = rs.length
+  const topology = {
+    devices: [
+      { id: 'PC', kind: 'host' as const, label: 'PC', x: 0, y: 0 },
+      { id: 'SW', kind: 'switch' as const, label: 'SW', x: 0, y: 420 },
+      ...rs.map((r, i) => ({
+        id: r.name,
+        kind: 'router' as const,
+        label: r.name,
+        x: (i - (n - 1) / 2) * 620,
+        y: 840,
+      })),
+    ],
+    links: [
+      {
+        id: 'pc',
+        a: { device: 'PC', port: 'eth0' },
+        b: { device: 'SW', port: 'Fa0/1' },
+        speed: 1000,
+      },
+      ...rs.map((r, i) => ({
+        id: `l-${r.name}`,
+        a: { device: 'SW', port: `Gi0/${i + 1}` },
+        b: { device: r.name, port: 'Gi0/0' },
+        speed: 1000,
+      })),
+    ],
+  }
+  const down = phase === 1 ? active : null
+  const forwarder = phase === 0 ? active : phase === 1 ? (f.afterFailure as string) : f.afterReturn
+  const diagram: TopologyVisual = {
+    kind: 'topology',
+    caption: `The PC’s gateway is the ${p} group ${group} virtual IP.${down ? ` ${down} has lost power.` : ''}`,
+    topology,
+    showPorts: false,
+    ...(down ? { downLinks: [`l-${down}`], deviceNotes: { [down]: '✕ off' } } : {}),
+  }
+  const after: TopologyVisual = {
+    ...diagram,
+    caption: `${forwarder} is ${w}: traffic to the virtual IP goes to it.`,
+    highlightDevices: [forwarder],
+    flows: [
+      { link: 'pc', from: 'PC' },
+      { link: `l-${forwarder}`, from: 'SW', delayMs: 900 },
+    ],
+  }
+  const old = rs.find((r) => r.name === active) as FhrpRouter
+  const prompts = [
+    `All routers start together. Tap the ${w}.`,
+    `${active}, the ${w}, loses power. Tap the router that takes over.`,
+    `${active} comes back. Tap the ${w} now.`,
+  ]
+  const explanations = [
+    `Highest priority wins, then the highest interface IP: ${active} becomes ${w}.`,
+    `${f.afterFailure} has the best priority (then IP) of the routers left, so it takes over at once.`,
+    f.afterReturn === active
+      ? `${active} has preemption on and a higher priority than ${f.afterFailure}, so it takes the ${w} role back.`
+      : `${active} ${old.preempt ? 'has preemption on but no higher priority' : 'has preemption off'}, so ${f.afterFailure} stays ${w}. (Default: preempt off for HSRP, on for VRRP.)`,
+  ]
+  const options = rs.map((r) => r.name).filter((r) => r !== down)
+  return {
+    prompt: prompts[phase] as string,
+    diagram,
+    after,
+    visuals: [table(rs, p, group)],
+    options,
+    answer: forwarder,
+    names: Object.fromEntries(options.map((o) => [o, o])),
+    explanation: explanations[phase] as string,
+    hint:
+      phase === 2
+        ? 'Taking the role back needs preempt on the returning router, and a higher priority.'
+        : 'Priority first (default 100), then the highest IP.',
+  }
+}
+
 const FACTS: ChoiceQuestion[] = [
   {
     prompt: 'What is the default HSRP and VRRP priority?',
@@ -181,6 +279,8 @@ const FACTS: ChoiceQuestion[] = [
 export function makeQuestion(params: GuardParams, seed: number, step: number): MixedQuestion {
   const rng = stepRng(seed, step)
   switch (rng.pick(params.kinds)) {
+    case 'plug':
+      return { kind: 'tap', q: plugQuestion(seed, step) }
     case 'active':
       return { kind: 'choice', q: activeQuestion(rng) }
     case 'failover':

@@ -12,6 +12,25 @@ async function noSidewaysScroll(page: Page, where: string) {
   expect(overflow, `${where} scrolls sideways`).toBe(false)
 }
 
+/**
+ * Nothing pokes out past the right edge of the screen (a clipped table column hides answers
+ * without making the page scroll). Drawings that scroll on purpose (.topo-scroll) are skipped.
+ */
+async function nothingOffScreen(page: Page, where: string) {
+  const out = await page.evaluate(() => {
+    const w = document.documentElement.clientWidth
+    const bad: string[] = []
+    for (const el of document.querySelectorAll<HTMLElement>('main *')) {
+      if (el.closest('.topo-scroll')) continue
+      const r = el.getBoundingClientRect()
+      if (r.width && r.right > w + 1)
+        bad.push(`${el.tagName.toLowerCase()}.${el.className} ${Math.round(r.right)}`)
+    }
+    return bad.slice(0, 3)
+  })
+  expect(out, `${where} has something past the screen edge`).toEqual([])
+}
+
 /** Every diagram label renders at 20 CSS px or more (theme rule), however wide the drawing. */
 async function diagramTextReadable(page: Page, where: string) {
   const smallest = await page.evaluate(() => {
@@ -57,6 +76,7 @@ test('every level opens and shows a question', async ({ page }) => {
     await expect(page.locator('#question-prompt'), href).toBeVisible()
     await expect(page.getByText('Question 1 of'), href).toBeVisible()
     await noSidewaysScroll(page, href)
+    await nothingOffScreen(page, href)
     await diagramTextReadable(page, href)
   }
 })

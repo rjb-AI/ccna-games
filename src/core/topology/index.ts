@@ -99,20 +99,6 @@ export function circleLayout(n: number): { x: number; y: number }[] {
   })
 }
 
-/** Short port label for diagrams: GigabitEthernet0/1 -> Gi0/1. */
-export function shortPort(name: string): string {
-  const m = /^([A-Za-z]+?)(Ethernet)?([\d/.]+)$/.exec(name)
-  if (!m) return name
-  const prefix: Record<string, string> = {
-    Gigabit: 'Gi',
-    FastEthernet: 'Fa',
-    Fast: 'Fa',
-    TenGigabit: 'Te',
-    Ethernet: 'Eth',
-  }
-  return `${prefix[m[1] as string] ?? m[1]}${m[3]}`
-}
-
 export interface Neighbor {
   localPort: string
   neighbor: string

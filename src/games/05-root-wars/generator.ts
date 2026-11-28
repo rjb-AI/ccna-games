@@ -30,7 +30,7 @@ import { circleLayout } from '../../core/topology'
 import type { Topology } from '../../core/topology'
 
 export type RootWarsKind =
-  'root' | 'root-port' | 'roles' | 'reconverge' | 'guards' | 'cli-root' | 'cli-backup'
+  'root' | 'root-port' | 'roles' | 'reconverge' | 'cut-tap' | 'guards' | 'cli-root' | 'cli-backup'
 
 export type RootWarsParams = {
   kinds: readonly RootWarsKind[]
@@ -278,9 +278,20 @@ function rolesQuestion(rng: Rng, s: Scene, showCosts: boolean): LabelsQuestion {
   }
 }
 
-function reconvergeQuestion(rng: Rng, s: Scene, showCosts: boolean): ChoiceQuestion | null {
-  const options = rng.shuffle(s.input.links)
-  for (const l of options) {
+/**
+ * A link whose failure unblocks exactly one port (core electStp, roleChanges), or null. Links
+ * whose loss would split the network are skipped.
+ */
+function pickCut(
+  rng: Rng,
+  s: Scene,
+): {
+  l: StpInput['links'][number]
+  after: StpResult
+  target: string
+  to: string
+} | null {
+  for (const l of rng.shuffle(s.input.links)) {
     const rest = { ...s.input, links: s.input.links.filter((x) => x.id !== l.id) }
     let after: StpResult
     try {
@@ -292,7 +303,16 @@ function reconvergeQuestion(rng: Rng, s: Scene, showCosts: boolean): ChoiceQuest
       (c) => c.from === 'alternate' && c.to !== 'down',
     )
     if (unblocked.length !== 1) continue
-    const target = (unblocked[0] as (typeof unblocked)[number]).port
+    const u = unblocked[0] as (typeof unblocked)[number]
+    return { l, after, target: u.port, to: u.to }
+  }
+  return null
+}
+
+function reconvergeQuestion(rng: Rng, s: Scene, showCosts: boolean): ChoiceQuestion | null {
+  const cut = pickCut(rng, s)
+  if (cut) {
+    const { l, target } = cut
     const [sw, port] = target.split(':') as [string, string]
     const label = (k: string) => {
       const [d, p] = k.split(':') as [string, string]
@@ -312,7 +332,7 @@ function reconvergeQuestion(rng: Rng, s: Scene, showCosts: boolean): ChoiceQuest
     const wrong = rng
       .shuffle([...blocked.filter((k) => k !== target), ...rng.shuffle(forwarding).slice(0, 2)])
       .slice(0, 3)
-    const to = (unblocked[0] as (typeof unblocked)[number]).to
+    const to = cut.to
     return {
       prompt: `The link between ${s.names[l.a.device]} and ${s.names[l.b.device]} fails. Which blocked port starts forwarding?`,
       visuals: sceneVisuals(s, showCosts, {
@@ -570,6 +590,66 @@ function rootPortTap(rng: Rng, s: Scene, showCosts: boolean): TapQuestion {
   }
 }
 
+/**
+ * Cut and watch: a link fails; tap the blocked port that starts forwarding. Then the new tree
+ * is drawn (core electStp without the link) and a frame crosses the port that opened.
+ */
+function cutTap(rng: Rng, s: Scene, showCosts: boolean): TapQuestion | null {
+  const cut = pickCut(rng, s)
+  if (!cut) return null
+  const { l, after, target } = cut
+  const onCut = (k: string) => k === portId(l.a) || k === portId(l.b)
+  const ports = Object.keys(s.result.roles).filter((k) => !onCut(k))
+  const ep = (k: string) => {
+    const [device, port] = k.split(':') as [string, string]
+    return { device, port }
+  }
+  const name = (k: string) => `${s.names[ep(k).device]} ${ep(k).port}`
+  const blocked = (r: StpResult) =>
+    Object.entries(r.roles)
+      .filter(([k, role]) => role === 'alternate' && !onCut(k))
+      .map(([k]) => ep(k))
+  const [diagram, ...rest] = sceneVisuals(s, showCosts, {
+    downLinks: [l.id],
+    blockedPorts: blocked(s.result),
+    caption: `VLAN ${s.input.vlan}. The dashed link has failed. ✕ = blocking before the failure.`,
+  })
+  const opened = s.input.links.find(
+    (x) => portId(x.a) === target || portId(x.b) === target,
+  ) as StpInput['links'][number]
+  return {
+    prompt: `The ${s.names[l.a.device]}–${s.names[l.b.device]} link fails. Tap the blocked port that starts forwarding.`,
+    diagram,
+    after: {
+      ...diagram,
+      caption: `After the failure: ${name(target)} is ${cut.to === 'root' ? 'a root port' : 'designated'} and forwarding.`,
+      blockedPorts: blocked(after),
+      highlightPorts: [ep(target)],
+      flows: [{ link: opened.id, from: ep(target).device }],
+    },
+    visuals: rest,
+    options: ports,
+    answer: target,
+    names: Object.fromEntries(ports.map((k) => [k, name(k)])),
+    whyWrong: Object.fromEntries(
+      ports
+        .filter((k) => k !== target)
+        .map((k) => [
+          k,
+          s.result.roles[k] === 'alternate'
+            ? `${name(k)} stays blocking: there is still a better path, or the other end is designated.`
+            : `${name(k)} was already forwarding before the failure.`,
+        ]),
+    ),
+    explanation: `Without that link, ${name(target)} becomes ${
+      cut.to === 'root'
+        ? `the root port: it is now ${s.names[ep(target).device]}'s best path to the root`
+        : 'designated: it is now the end of its link closer to the root'
+    }, so it moves to forwarding.`,
+    hint: 'Which switch lost its path to the root? Its blocked port is the way back.',
+  }
+}
+
 export function makeQuestion(params: RootWarsParams, seed: number, step: number): MixedQuestion {
   const rng = stepRng(seed, step)
   for (;;) {
@@ -580,7 +660,8 @@ export function makeQuestion(params: RootWarsParams, seed: number, step: number)
       if (q) return { kind: 'cli', q }
       continue
     }
-    const scene = buildScene(rng, kind === 'roles' ? 3 : 3, kind === 'roles' ? 5 : 6)
+    // Roles and cuts mark many ports on the drawing; up to 5 switches keeps that on a phone.
+    const scene = buildScene(rng, 3, kind === 'roles' || kind === 'cut-tap' ? 5 : 6)
     switch (kind) {
       case 'root':
         return { kind: 'tap', q: rootTap(rng, scene, params.showCosts) }
@@ -588,6 +669,11 @@ export function makeQuestion(params: RootWarsParams, seed: number, step: number)
         return { kind: 'tap', q: rootPortTap(rng, scene, params.showCosts) }
       case 'roles':
         return { kind: 'labels', q: rolesQuestion(rng, scene, params.showCosts) }
+      case 'cut-tap': {
+        const q = cutTap(rng, scene, params.showCosts)
+        if (q) return { kind: 'tap', q }
+        break
+      }
       case 'reconverge': {
         const q = reconvergeQuestion(rng, scene, params.showCosts)
         if (q) return { kind: 'choice', q }
