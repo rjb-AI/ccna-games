@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Facts } from './Facts'
 import type { LabelsQuestion, LabelsResponse } from './labels'
 import type { QuestionViewProps } from './types'
+import { Prompt } from './Prompt'
 import { Visuals } from './VisualsView'
 
 /** Pick one option for every item, then check them all at once. */
@@ -13,7 +14,6 @@ export function LabelsView({
   hintsAllowed,
 }: QuestionViewProps<LabelsQuestion, LabelsResponse>) {
   const [picks, setPicks] = useState<Record<string, string>>({})
-  const [hintOpen, setHintOpen] = useState(false)
   const answered = response !== null
   const shown = answered ? response : picks
   const missing = question.items.filter((it) => !picks[it.id]).length
@@ -21,22 +21,13 @@ export function LabelsView({
 
   return (
     <div className="labels-q">
-      <p className="choice-prompt" id="question-prompt">
-        {question.prompt}
-      </p>
+      <Prompt
+        text={question.prompt}
+        hint={question.hint}
+        hintsAllowed={hintsAllowed && !answered}
+      />
       {question.facts && <Facts facts={question.facts} />}
       <Visuals visuals={question.visuals} />
-      {hintsAllowed && question.hint && !answered && (
-        <div className="hint">
-          {hintOpen ? (
-            <p>Hint: {question.hint}</p>
-          ) : (
-            <button type="button" className="btn-secondary" onClick={() => setHintOpen(true)}>
-              Show hint
-            </button>
-          )}
-        </div>
-      )}
       <ul className="labels-list">
         {question.items.map((it) => {
           const part = parts.find((p) => p.id === it.id)

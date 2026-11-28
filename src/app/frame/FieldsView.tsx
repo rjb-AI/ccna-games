@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Facts } from './Facts'
 import { type FieldsQuestion, type FieldsResponse, KEYS, applyKey, invalidReason } from './fields'
 import type { QuestionViewProps } from './types'
+import { Prompt } from './Prompt'
 import { Visuals } from './VisualsView'
 
 /**
@@ -21,7 +22,6 @@ export function FieldsView({
   )
   const [active, setActive] = useState(0)
   const [error, setError] = useState<string | null>(null)
-  const [hintOpen, setHintOpen] = useState(false)
   const answered = response !== null
   const field = fields[active]
 
@@ -80,22 +80,13 @@ export function FieldsView({
 
   return (
     <div className="fields-q">
-      <p className="choice-prompt" id="question-prompt">
-        {question.prompt}
-      </p>
+      <Prompt
+        text={question.prompt}
+        hint={question.hint}
+        hintsAllowed={hintsAllowed && !answered}
+      />
       <Facts facts={question.facts} />
       <Visuals visuals={question.visuals} />
-      {hintsAllowed && question.hint && !answered && (
-        <div className="hint">
-          {hintOpen ? (
-            <p>Hint: {question.hint}</p>
-          ) : (
-            <button type="button" className="btn-secondary" onClick={() => setHintOpen(true)}>
-              Show hint
-            </button>
-          )}
-        </div>
-      )}
 
       <div className="fields-list" role="group" aria-labelledby="question-prompt">
         {fields.map((f, i) => {

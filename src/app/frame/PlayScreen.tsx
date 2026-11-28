@@ -22,6 +22,7 @@ import { useGamePlaySettings } from '../settingsStore'
 import { requestPersistence } from '../storage/db'
 import { saveMiss, saveResult } from '../storage/progress'
 import { ResultsScreen } from './ResultsScreen'
+import { useQuestionStart } from './useQuestionStart'
 import type { RegisteredGame } from './types'
 import './frame.css'
 
@@ -87,6 +88,7 @@ function Play({ game, level, initialSeed, onRestart }: PlayProps) {
   const nextRef = useRef<HTMLButtonElement>(null)
 
   const step = currentStep(session)
+  const settling = useQuestionStart(step)
   const streak = currentStreak(session.steps)
   const question = useMemo(
     () => game.makeQuestion(level, session.seed, step),
@@ -172,21 +174,19 @@ function Play({ game, level, initialSeed, onRestart }: PlayProps) {
           Quit
         </a>
         <p className="play-meta">
-          {game.title} · {MODE_LABELS[level.mode]}
+          Question {step + 1} of {session.questionCount} · {MODE_LABELS[level.mode]}
+          {left !== undefined && <> · {formatClock(left)} left</>}
+          {level.mode === 'drill' && streak > 0 && (
+            <span className="points">
+              {' '}
+              · {streak} in a row
+              {streakMultiplier(streak) > 1 && <> · x{streakMultiplier(streak)}</>}
+            </span>
+          )}
         </p>
       </div>
-      <p className="play-progress">
-        Question {step + 1} of {session.questionCount}
-        {left !== undefined && <> · {formatClock(left)} left</>}
-        {level.mode === 'drill' && streak > 0 && (
-          <span className="points">
-            {' '}
-            · {streak} in a row{streakMultiplier(streak) > 1 && <> · x{streakMultiplier(streak)}</>}
-          </span>
-        )}
-      </p>
 
-      <div key={step}>
+      <div key={step} className={settling ? 'is-settling' : undefined}>
         {game.render({
           question,
           response: pending ? pending.response : null,

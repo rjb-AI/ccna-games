@@ -4,6 +4,7 @@ import type { ReviewCard } from '../../core/srs'
 import { findGame } from '../registry'
 import { href } from '../router'
 import { SESSION_SIZE, loadQueue } from './queue'
+import { useQuestionStart } from '../frame/useQuestionStart'
 import { saveReview } from '../storage/progress'
 import { formatDueIn, useNow } from '../time'
 import '../frame/frame.css'
@@ -16,6 +17,7 @@ export function ReviewScreen({ gameId }: { gameId?: string }) {
   const [queue, setQueue] = useState<ReviewCard[] | null>(null)
   const [nextDue, setNextDue] = useState<number | null>(null)
   const [index, setIndex] = useState(0)
+  const settling = useQuestionStart(index)
   const [pending, setPending] = useState<{ response: unknown; check: Check } | null>(null)
   // Card ids missed at least once in this session.
   const [missedIds, setMissedIds] = useState<ReadonlySet<string>>(new Set())
@@ -56,7 +58,10 @@ export function ReviewScreen({ gameId }: { gameId?: string }) {
       <a className="btn btn-secondary" href={back}>
         {card ? 'Quit' : backLabel}
       </a>
-      <p className="play-meta">Reviews{scope ? ` · ${scope.title}` : ''}</p>
+      <p className="play-meta">
+        Reviews{scope ? ` · ${scope.title}` : ''}
+        {card && queue ? ` · Card ${index + 1} of ${queue.length}` : ''}
+      </p>
     </div>
   )
 
@@ -111,10 +116,7 @@ export function ReviewScreen({ gameId }: { gameId?: string }) {
   return (
     <main className="screen">
       {header}
-      <p className="play-progress">
-        Card {index + 1} of {queue.length} · from {game.title}
-      </p>
-      <div key={index}>
+      <div key={index} className={settling ? 'is-settling' : undefined}>
         {game.render({
           question,
           response: pending ? pending.response : null,

@@ -1,7 +1,7 @@
-import { useState } from 'react'
 import type { ChoiceQuestion } from './choice'
 import { Facts } from './Facts'
 import type { QuestionViewProps } from './types'
+import { Prompt } from './Prompt'
 import { Visuals } from './VisualsView'
 
 /** A question answered by tapping one of several choices. Reusable by any game. */
@@ -12,26 +12,16 @@ export function ChoiceView({
   onAnswer,
   hintsAllowed,
 }: QuestionViewProps<ChoiceQuestion, string>) {
-  const [hintOpen, setHintOpen] = useState(false)
   const answered = response !== null
   return (
     <div className="choice">
-      <p className="choice-prompt" id="question-prompt">
-        {question.prompt}
-      </p>
+      <Prompt
+        text={question.prompt}
+        hint={question.hint}
+        hintsAllowed={hintsAllowed && !answered}
+      />
       {question.facts && <Facts facts={question.facts} />}
       <Visuals visuals={question.visuals} />
-      {hintsAllowed && question.hint && !answered && (
-        <div className="hint">
-          {hintOpen ? (
-            <p>Hint: {question.hint}</p>
-          ) : (
-            <button type="button" className="btn-secondary" onClick={() => setHintOpen(true)}>
-              Show hint
-            </button>
-          )}
-        </div>
-      )}
       <div
         className={`choice-list${question.mono ? ' is-mono' : ''}`}
         role="group"

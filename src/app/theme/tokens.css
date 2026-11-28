@@ -42,4 +42,9 @@
   --space-3: 24px;
   --space-4: 32px;
   --content-max: 960px;
+  /* Screen edges: at least 20px, more where the phone's rounded corners or notch need it. */
+  --gutter-left: max(20px, env(safe-area-inset-left));
+  --gutter-right: max(20px, env(safe-area-inset-right));
+  --gutter-top: max(12px, env(safe-area-inset-top));
+  --gutter-bottom: max(var(--space-2), env(safe-area-inset-bottom));
 }
