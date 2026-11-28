@@ -7,6 +7,7 @@ import type { ChoiceQuestion } from '../../app/frame/choice'
 import type { FieldsQuestion } from '../../app/frame/fields'
 import type { LabelsQuestion } from '../../app/frame/labels'
 import type { MixedQuestion } from '../../app/frame/mixed'
+import type { TopologyVisual } from '../../app/frame/visuals'
 import type { OrderQuestion } from '../../app/frame/order'
 import { type IPv4, formatIPv4, parseIPv4 } from '../../core/netmath'
 import { type Rng, stepRng } from '../../core/rng'
@@ -116,6 +117,26 @@ function routerIdQuestion(rng: Rng): FieldsQuestion {
 
 // ---------- DR/BDR ----------
 
+/** Routers hanging off one shared Ethernet segment, stacked for a portrait phone. */
+function segmentPicture(names: readonly string[]): TopologyVisual {
+  return {
+    kind: 'topology',
+    caption: 'One shared Ethernet segment (a broadcast network).',
+    topology: {
+      devices: [
+        { id: 'LAN', kind: 'switch', label: 'LAN', x: 0, y: ((names.length - 1) * 420) / 2 },
+        ...names.map((n, i) => ({ id: n, kind: 'router' as const, label: n, x: 1000, y: i * 420 })),
+      ],
+      links: names.map((n) => ({
+        id: n,
+        a: { device: 'LAN', port: n },
+        b: { device: n, port: 'Gi0/0' },
+        speed: 1000,
+      })),
+    },
+  }
+}
+
 function drQuestion(rng: Rng): LabelsQuestion {
   for (;;) {
     const n = rng.int(3, 5)
@@ -134,23 +155,27 @@ function drQuestion(rng: Rng): LabelsQuestion {
     const options: DrRole[] = ['DR', 'BDR', 'DROTHER']
     const lateR = routers.find((r) => r.joinOrder === 1)
     return {
-      prompt: 'All routers share one Ethernet segment. Give each one its role.',
+      prompt: 'All routers share one Ethernet segment. Tap each router to give it its role.',
       visuals: [
+        segmentPicture(routers.map((r) => r.name)),
         {
           kind: 'table',
-          caption: 'OSPF interface settings on the shared segment',
-          columns: ['Router', 'Priority', 'Router ID', 'Came up'],
+          caption: 'OSPF settings (Pri = priority; Up = came up first or later)',
+          columns: ['Router', 'Pri', 'Router ID', 'Up'],
           rows: routers.map((r) => [
             r.name,
             String(r.priority),
             fmt(r.routerId),
-            r.joinOrder === 0 ? 'at the start' : 'later',
+            r.joinOrder === 0 ? 'first' : 'later',
           ]),
         },
       ],
       items: routers.map((r) => ({ id: r.name, label: r.name })),
       options,
       answers: roles,
+      display: 'diagram',
+      anchors: Object.fromEntries(routers.map((r) => [r.name, r.name])),
+      codes: { DR: 'D', BDR: 'B', DROTHER: 'O' },
       explanation: `Highest priority wins, then highest router ID; priority 0 never becomes DR or BDR.${
         lateR
           ? ` ${lateR.name} came up after the election, and OSPF does not preempt, so it ${roles[lateR.name] === 'DROTHER' ? 'stays DROTHER even if it would have won' : 'only fills a role that was still empty'}.`

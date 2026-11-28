@@ -26,6 +26,9 @@ export interface TopologyVisual {
   blockedPorts?: readonly Endpoint[]
   /** Links drawn as failed. */
   downLinks?: readonly string[]
+  /** Ports and devices that carry a tappable label badge (labels drawn on the diagram). */
+  badgePorts?: readonly Endpoint[]
+  badgeDevices?: readonly string[]
 }
 
 export interface TableVisual {

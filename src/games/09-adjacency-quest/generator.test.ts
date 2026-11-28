@@ -62,7 +62,7 @@ describe('Adjacency Quest generator', () => {
         const roles = Object.values(m.q.answers)
         expect(roles.filter((r) => r === 'DR')).toHaveLength(1)
         expect(roles.filter((r) => r === 'BDR')).toHaveLength(1)
-        const t = m.q.visuals?.[0]
+        const t = m.q.visuals?.find((v) => v.kind === 'table')
         if (t?.kind !== 'table') throw new Error('table')
         for (const row of t.rows)
           if (row[1] === '0') expect(m.q.answers[row[0] as string]).toBe('DROTHER')

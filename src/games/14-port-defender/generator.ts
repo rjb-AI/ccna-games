@@ -134,7 +134,7 @@ function matchQuestion(rng: Rng): ChoiceQuestion {
 function trustQuestion(rng: Rng): LabelsQuestion {
   const s = scene(rng)
   return {
-    prompt: 'You turn on DHCP snooping for this VLAN. Mark each port trusted or untrusted.',
+    prompt: 'You turn on DHCP snooping. Tap each port on SW1: T for trusted, U for untrusted.',
     visuals: [picture(s, false)],
     items: s.ports.map((p) => ({
       id: p.name,
@@ -142,7 +142,9 @@ function trustQuestion(rng: Rng): LabelsQuestion {
       label: `${p.name} (${p.role === 'uplink' && s.serverLocal ? 'uplink to the core router' : ROLE_TEXT[p.role]})`,
     })),
     options: ['Trusted', 'Untrusted'],
-    display: 'bins',
+    display: 'diagram',
+    anchors: Object.fromEntries(s.ports.map((p) => [p.name, `SW1:${p.name}`])),
+    codes: { Trusted: 'T', Untrusted: 'U' },
     answers: Object.fromEntries(
       s.ports.map((p) => [p.name, correctTrust(p.role) ? 'Trusted' : 'Untrusted']),
     ),

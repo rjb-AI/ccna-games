@@ -264,11 +264,15 @@ function rolesQuestion(rng: Rng, s: Scene, showCosts: boolean): LabelsQuestion {
     .map((b) => `${s.names[b.id]} root port ${s.result.rootPort[b.id]}`)
     .join(', ')
   return {
-    prompt: 'Give each port its STP role.',
+    prompt: 'Tap each ? on the diagram to give that port its STP role.',
     visuals: sceneVisuals(s, showCosts),
     items,
     options,
     answers,
+    display: 'diagram',
+    // Item ids are already "switch:port", the diagram's port spots.
+    anchors: Object.fromEntries(items.map((it) => [it.id, it.id])),
+    codes: { [ROLE_LABELS.root]: 'R', [ROLE_LABELS.designated]: 'D', [ROLE_LABELS.alternate]: 'A' },
     explanation: `Root bridge: ${s.names[s.result.root]} (all its ports are designated). ${rpText}. On every other link, the end closer to the root (then lower bridge ID) is designated; anything left is alternate (blocking).`,
     hint: 'Root first, then one root port per switch, then one designated port per link.',
   }

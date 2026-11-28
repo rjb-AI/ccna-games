@@ -7,10 +7,10 @@ of each column.
 ## Doing
 
 - **Game-like mechanics, in the MECHANICS.md build order** (user: "do them in the order you
-  suggested"). Steps 1 (bins) and 2 (tap the diagram, pick mode; every diagram fits a phone) done.
-  Now: step 3, tap the diagram assign mode (paint STP port roles, DR/BDR, snooping trust, Wi-Fi
-  channels on a floor plan, AP ports), then swipe deck, bit board, match pairs and code tiles,
-  packet path, grid placement. Before each: inspiration from `docs/INSPIRATION.md` (user: look up
+  suggested"). Steps 1 (bins), 2 (tap the diagram) and 3 (labels on the diagram) done. Now:
+  step 4, swipe deck (ACL door, Hex legal or broken, Wi-Fi "will it connect?", AI desk, FHRP
+  preempt), then bit board, match pairs and code tiles, packet path, grid placement. Still to
+  move onto the diagram: Airwaves channels (needs a floor-plan visual), AP ports. Before each: inspiration from `docs/INSPIRATION.md` (user: look up
   games of each type first). Still to move onto tapping: Neighbor Detective (tap the mistake),
   Longest Match rows, ACL/YAML bad line, router ID row.
 
@@ -56,6 +56,11 @@ Reusable interaction kinds, then which games use them:
 - **Fix the file**: Playbook Runner, tap lines to indent/outdent YAML.
 
 ## Done
+
+- 28 Nov: **Labels on the diagram** (mechanics step 3): tap a badge on a port or router to cycle
+  its label, with a letter legend (never colour alone) and ✓/✗ on the drawing after checking.
+  Root Wars "label every port" (R/D/A), Port Defender trust (T/U on SW1's ports), Adjacency
+  Quest DR/BDR on a drawn segment (D/B/O). Layout leaves room for badges.
 
 - 28 Nov: **Tap the diagram** (mechanics step 2) and **every diagram fits a phone**. Layout
   stretches drawings down (phones are tall) and only then widens; ports become tap-to-read dots,
