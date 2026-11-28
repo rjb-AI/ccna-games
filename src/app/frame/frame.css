@@ -390,3 +390,73 @@ button {
 .missed p {
   overflow-wrap: anywhere;
 }
+
+/* Label each item */
+.labels-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.labels-list li {
+  padding: var(--space-1) var(--space-2);
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.labels-list li.is-right {
+  border-color: var(--color-good);
+}
+
+.labels-list li.is-wrong {
+  border-color: var(--color-bad);
+}
+
+.labels-item {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  margin-bottom: var(--space-1);
+}
+
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.segmented button {
+  flex: 1 1 auto;
+  min-height: var(--tap-min);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  border: 2px solid var(--color-border);
+  font-weight: 600;
+}
+
+.segmented button.is-on {
+  color: var(--color-accent-text);
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.labels-list .mark {
+  display: block;
+  margin-top: var(--space-1);
+  font-weight: 700;
+}
+
+.labels-list li.is-right .mark {
+  color: var(--color-good);
+}
+
+.labels-list li.is-wrong .mark {
+  color: var(--color-bad);
+}
+
+button:disabled {
+  cursor: default;
+}

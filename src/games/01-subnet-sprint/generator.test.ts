@@ -52,7 +52,7 @@ describe('Subnet Sprint generator', () => {
           if (m.kind === 'fields') {
             expect(checkFields(m.q, m.q.answers).correct).toBe(true)
             expect(checkFields(m.q, {}).correct).toBe(false)
-          } else {
+          } else if (m.kind === 'choice') {
             expect(checkMixed(m, m.q.answer).correct).toBe(true)
           }
         }),

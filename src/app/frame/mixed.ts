@@ -5,18 +5,33 @@
 import type { Check } from '../../core/game'
 import { type ChoiceQuestion, checkChoice, describeChoice } from './choice'
 import { type FieldsQuestion, type FieldsResponse, checkFields, describeFields } from './fields'
+import { type LabelsQuestion, type LabelsResponse, checkLabels, describeLabels } from './labels'
 
 export type MixedQuestion =
-  { kind: 'fields'; q: FieldsQuestion } | { kind: 'choice'; q: ChoiceQuestion }
+  | { kind: 'fields'; q: FieldsQuestion }
+  | { kind: 'choice'; q: ChoiceQuestion }
+  | { kind: 'labels'; q: LabelsQuestion }
 
-export type MixedResponse = string | FieldsResponse
+export type MixedResponse = string | FieldsResponse | LabelsResponse
 
 export function checkMixed(m: MixedQuestion, r: MixedResponse): Check {
-  return m.kind === 'fields'
-    ? checkFields(m.q, typeof r === 'string' ? {} : r)
-    : checkChoice(m.q, typeof r === 'string' ? r : '')
+  switch (m.kind) {
+    case 'fields':
+      return checkFields(m.q, typeof r === 'string' ? {} : r)
+    case 'labels':
+      return checkLabels(m.q, typeof r === 'string' ? {} : r)
+    case 'choice':
+      return checkChoice(m.q, typeof r === 'string' ? r : '')
+  }
 }
 
 export function describeMixed(m: MixedQuestion): string {
-  return m.kind === 'fields' ? describeFields(m.q) : describeChoice(m.q)
+  switch (m.kind) {
+    case 'fields':
+      return describeFields(m.q)
+    case 'labels':
+      return describeLabels(m.q)
+    case 'choice':
+      return describeChoice(m.q)
+  }
 }

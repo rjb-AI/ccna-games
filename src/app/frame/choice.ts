@@ -1,11 +1,14 @@
 /** Questions answered by tapping one of several choices. */
 import type { Check } from '../../core/game'
 import type { Fact } from './fields'
+import type { Visual } from './visuals'
 
 export interface ChoiceQuestion {
   prompt: string
   /** Given information shown above the choices. */
   facts?: readonly Fact[]
+  /** Diagrams or tables shown above the choices. */
+  visuals?: readonly Visual[]
   choices: readonly string[]
   answer: string
   explanation: string

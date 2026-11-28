@@ -1,0 +1,117 @@
+/* Topology diagrams. Colours from tokens.css; nothing fixed or sticky. */
+.topo {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-1);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.topo svg {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  margin: 0 auto;
+}
+
+.topo figcaption {
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.topo-link line {
+  stroke: var(--color-text-muted);
+}
+
+.topo-link.is-down line {
+  stroke: var(--color-bad);
+  stroke-dasharray: 12 10;
+}
+
+.topo-link-label,
+.topo-port text,
+.topo-note {
+  fill: var(--color-text);
+  paint-order: stroke;
+  stroke: var(--color-surface);
+  stroke-linejoin: round;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.topo-device rect {
+  fill: var(--color-bg);
+  stroke: var(--color-border);
+}
+
+.topo-device.kind-switch rect,
+.topo-device.kind-router rect {
+  stroke: var(--color-accent);
+}
+
+.topo-device.is-hot rect {
+  stroke: var(--color-focus);
+}
+
+.topo-device text {
+  fill: var(--color-text);
+  font-weight: 700;
+}
+
+.topo-port circle {
+  fill: var(--color-surface);
+  stroke: var(--color-accent);
+}
+
+.topo-port.is-hot circle {
+  stroke: var(--color-focus);
+}
+
+.topo-port.is-blocked circle {
+  stroke: var(--color-bad);
+}
+
+.topo-port.is-blocked text:last-child {
+  fill: var(--color-bad);
+}
+
+/* Data tables inside questions */
+.qtable {
+  margin: 0 0 var(--space-2);
+  overflow-x: auto;
+}
+
+.qtable table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+}
+
+.qtable caption {
+  text-align: left;
+  color: var(--color-text-muted);
+  padding-bottom: var(--space-1);
+}
+
+.qtable th,
+.qtable td {
+  text-align: left;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+}
+
+.qtable td {
+  word-break: keep-all;
+}
+
+.qtable th {
+  background-color: var(--color-surface);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+
+.qtable tr.is-hot td {
+  background-color: var(--color-good-bg);
+}

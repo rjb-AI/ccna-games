@@ -1,5 +1,6 @@
 import { ChoiceView } from './ChoiceView'
 import { FieldsView } from './FieldsView'
+import { LabelsView } from './LabelsView'
 import type { MixedQuestion, MixedResponse } from './mixed'
 import type { QuestionViewProps } from './types'
 
@@ -8,6 +9,15 @@ export function MixedView(props: QuestionViewProps<MixedQuestion, MixedResponse>
   if (m.kind === 'fields') {
     return (
       <FieldsView
+        {...rest}
+        question={m.q}
+        response={response === null || typeof response === 'string' ? null : response}
+      />
+    )
+  }
+  if (m.kind === 'labels') {
+    return (
+      <LabelsView
         {...rest}
         question={m.q}
         response={response === null || typeof response === 'string' ? null : response}
