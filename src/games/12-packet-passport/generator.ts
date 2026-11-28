@@ -6,6 +6,7 @@
 import type { ChoiceQuestion } from '../../app/frame/choice'
 import type { LabelsQuestion } from '../../app/frame/labels'
 import type { MixedQuestion } from '../../app/frame/mixed'
+import { BLANK, type TilesQuestion } from '../../app/frame/tiles'
 import type { OrderQuestion } from '../../app/frame/order'
 import type { TableVisual, TopologyVisual } from '../../app/frame/visuals'
 import {
@@ -41,7 +42,14 @@ import {
 } from '../../core/sim/services'
 
 export type PassportKind =
-  'passport' | 'nat-passport' | 'arp' | 'dhcp' | 'nat-table' | 'nat-config' | 'breakfix'
+  | 'passport'
+  | 'nat-passport'
+  | 'arp'
+  | 'dhcp'
+  | 'nat-table'
+  | 'nat-config'
+  | 'nat-tiles'
+  | 'breakfix'
 export interface PassportParams {
   kinds: readonly PassportKind[]
 }
@@ -416,9 +424,57 @@ function natTableQuestion(rng: Rng): LabelsQuestion {
     ],
     items: keys.map((k) => ({ id: k, label: NAT_TERM_LABELS[k] })),
     options,
+    display: 'pairs',
+    mono: true,
     answers: Object.fromEntries(keys.map((k) => [k, fmt(t[k])])),
     explanation: `Inside local = the PC’s real address (${fmt(t.insideLocal)}). Inside global = what the Internet sees for it (${fmt(t.insideGlobal)}). The server is not translated, so outside local and outside global are both ${fmt(t.outsideGlobal)}.`,
     hint: '"Inside/outside" = whose address. "Local/global" = seen from which side.',
+  }
+}
+
+/**
+ * Code tiles: build R1's NAT configuration. Syntax from Cisco "Configure Network Address
+ * Translation": ip nat inside/outside on the interfaces; PAT with
+ * "ip nat inside source list N interface X overload"; static with
+ * "ip nat inside source static <inside local> <inside global>".
+ */
+function natTilesQuestion(rng: Rng): TilesQuestion {
+  const lan = `192.168.${rng.int(0, 254)}`
+  if (rng.chance(0.5)) {
+    return {
+      prompt: `Let the whole LAN (${lan}.0/24) share R1’s Gi0/1 address to reach the Internet.`,
+      caption: 'R1 configuration',
+      lines: [
+        `access-list 1 permit ${lan}.0 0.0.0.255`,
+        'interface GigabitEthernet0/0',
+        ` ip nat ${BLANK}`,
+        'interface GigabitEthernet0/1',
+        ` ip nat ${BLANK}`,
+        `ip nat ${BLANK} source list 1 interface GigabitEthernet0/1 ${BLANK}`,
+      ],
+      chips: rng.shuffle(['inside', 'outside', 'inside', 'overload', 'static', 'outside']),
+      answers: ['inside', 'outside', 'inside', 'overload'],
+      explanation:
+        'Gi0/0 faces the LAN (ip nat inside), Gi0/1 faces the Internet (ip nat outside). "ip nat inside source list 1 interface Gi0/1 overload" is PAT: everyone the ACL permits shares Gi0/1’s address, told apart by port numbers.',
+      hint: 'Inside is the LAN side. "overload" is what makes it PAT.',
+    }
+  }
+  const host = `${lan}.${rng.int(10, 200)}`
+  const pub = `203.0.113.${rng.int(2, 250)}`
+  return {
+    prompt: `Publish the web server ${host} on the fixed public address ${pub}.`,
+    caption: 'R1 configuration',
+    lines: [
+      'interface GigabitEthernet0/0',
+      ` ip nat ${BLANK}`,
+      'interface GigabitEthernet0/1',
+      ` ip nat ${BLANK}`,
+      `ip nat inside source ${BLANK} ${BLANK} ${BLANK}`,
+    ],
+    chips: rng.shuffle(['inside', 'outside', 'static', host, pub, 'overload']),
+    answers: ['inside', 'outside', 'static', host, pub],
+    explanation: `Static NAT: "ip nat inside source static <inside local> <inside global>", so ${host} (the server’s real address) comes first and ${pub} (what the Internet sees) second. The interfaces still need ip nat inside / outside.`,
+    hint: 'Static NAT lists the inside local address first, then the inside global one.',
   }
 }
 
@@ -605,6 +661,8 @@ export function makeQuestion(params: PassportParams, seed: number, step: number)
       return dhcpQuestion(rng)
     case 'nat-table':
       return { kind: 'labels', q: natTableQuestion(rng) }
+    case 'nat-tiles':
+      return { kind: 'tiles', q: natTilesQuestion(rng) }
     case 'nat-config':
       return { kind: 'choice', q: natConfigQuestion(rng) }
     case 'breakfix':

@@ -43,3 +43,11 @@ NAT: `roles-swapped`, `inside-missing`, `acl-wrong`.
 
 `generator.test.ts`: answers pass their own checks; passport IPs re-derived from the interface
 table; NAT table roles; all 7 faults appear. Core tests for forwarding, DHCP and NAT.
+
+## Code tiles and match pairs (mechanics step 6)
+
+- `nat-tiles` (Learn): build R1's NAT configuration from chips: PAT for the whole LAN
+  (inside/outside interfaces, `ip nat inside source list 1 interface ... overload`) or static NAT
+  for one server (`ip nat inside source static <inside local> <inside global>`). Syntax from
+  Cisco "Configure Network Address Translation".
+- The NAT table level now draws as match pairs (term ↔ address); answers unchanged.

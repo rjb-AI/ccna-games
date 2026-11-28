@@ -9,10 +9,11 @@
  */
 import type { ChoiceQuestion } from '../../app/frame/choice'
 import type { MixedQuestion } from '../../app/frame/mixed'
+import { BLANK, type TilesQuestion } from '../../app/frame/tiles'
 import { IOS_MODULES, checkYaml } from '../../core/automation'
 import { type Rng, stepRng } from '../../core/rng'
 
-export type RunnerKind = 'yaml' | 'module' | 'fill' | 'inventory' | 'idempotent'
+export type RunnerKind = 'yaml' | 'module' | 'fill' | 'fill-tiles' | 'inventory' | 'idempotent'
 export interface RunnerParams {
   kinds: readonly RunnerKind[]
 }
@@ -118,6 +119,34 @@ function moduleQuestion(rng: Rng): ChoiceQuestion {
     ),
     explanation: `${t.a}: ${IOS_MODULES[t.a as keyof typeof IOS_MODULES]}`,
     mono: true,
+  }
+}
+
+/**
+ * Code tiles: a playbook with its key words blank, filled from chips (with near-miss
+ * distractors). Module names and option keys from core IOS_MODULES and the cisco.ios docs.
+ */
+function fillTilesQuestion(rng: Rng): TilesQuestion {
+  const lines = playbook(rng)
+  const blanks: [number, string][] = [
+    [5, 'cisco.ios.ios_command'],
+    [6, 'commands'],
+    [8, 'register'],
+    [11, 'ansible.builtin.debug'],
+  ]
+  const shown = lines.map((l, i) => {
+    const b = blanks.find(([at]) => at === i)
+    return b ? l.replace(b[1], BLANK) : l
+  })
+  return {
+    prompt: 'Fill the playbook: run a show command on the routers, keep the output, print it.',
+    caption: 'site.yml',
+    lines: shown,
+    chips: rng.shuffle([...blanks.map(([, w]) => w), 'cisco.ios.ios_config', 'lines', 'vars']),
+    answers: blanks.map(([, w]) => w),
+    explanation:
+      'ios_command runs show commands and takes a list under "commands"; "register" keeps the result; ansible.builtin.debug prints it. ios_config (with "lines") is for changing configuration.',
+    hint: 'Which module only reads? Which keyword saves a task’s result?',
   }
 }
 
@@ -244,6 +273,8 @@ export function makeQuestion(params: RunnerParams, seed: number, step: number): 
       return { kind: 'choice', q: yamlQuestion(rng) }
     case 'module':
       return { kind: 'choice', q: moduleQuestion(rng) }
+    case 'fill-tiles':
+      return { kind: 'tiles', q: fillTilesQuestion(rng) }
     case 'fill':
       return { kind: 'choice', q: fillQuestion(rng) }
     case 'inventory':

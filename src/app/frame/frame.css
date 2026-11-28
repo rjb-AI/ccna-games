@@ -1338,3 +1338,162 @@ button.bit.is-on {
   color: var(--color-bad);
   font-weight: 700;
 }
+
+/* Code tiles (TilesView): config lines with blank slots, and a chip bank below. */
+.tiles-code {
+  margin: 0 0 var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background-color: var(--color-surface);
+}
+
+.tiles-code figcaption {
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.tiles-code ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tiles-code li {
+  font-family: var(--font-mono);
+  white-space: pre-wrap; /* wraps with a hanging indent set per line in TilesView */
+  overflow-wrap: anywhere;
+  line-height: 2.1;
+}
+
+.tiles-code li button {
+  text-indent: 0;
+}
+
+.tiles-code code {
+  font-family: var(--font-mono);
+}
+
+button.tile-slot {
+  min-width: 64px;
+  min-height: 44px;
+  padding: 0 8px;
+  margin: 2px 0;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background-color: var(--color-bg);
+  border: 2px dashed var(--color-border);
+}
+
+button.tile-slot.is-active {
+  border-color: var(--color-focus);
+}
+
+button.tile-slot.is-filled {
+  color: var(--color-text);
+  border-style: solid;
+  border-color: var(--color-accent);
+}
+
+button.tile-slot.is-right {
+  border-color: var(--color-good);
+}
+
+button.tile-slot.is-wrong {
+  border-color: var(--color-bad);
+}
+
+.tiles-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
+}
+
+button.tile-chip,
+.tile-gap {
+  min-height: var(--tap-min);
+  padding: 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  border-radius: var(--radius);
+}
+
+button.tile-chip {
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-accent);
+}
+
+/* Where a placed chip came from: an empty outline with the word, not clickable. */
+.tile-gap {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  border: 2px dashed var(--color-border);
+}
+
+/* Match pairs (PairsView): two columns of cards; a pair shares a number badge. */
+.pairs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
+}
+
+.pairs-col {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+button.pair-card {
+  position: relative;
+  width: 100%;
+  min-height: 56px;
+  padding: 6px 30px 6px 10px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+
+button.pair-card.is-picked {
+  border-color: var(--color-focus);
+  border-width: 3px;
+}
+
+button.pair-card.is-paired {
+  border-color: var(--color-accent);
+}
+
+button.pair-card.is-right {
+  border-color: var(--color-good);
+}
+
+button.pair-card.is-wrong {
+  border-color: var(--color-bad);
+}
+
+.pair-num {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  min-width: 24px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--color-accent);
+  text-align: center;
+}
+
+.pairs-col .mark {
+  display: block;
+  color: var(--color-bad);
+  font-weight: 700;
+}

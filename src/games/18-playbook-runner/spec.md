@@ -12,3 +12,8 @@ Topics: v2-5.5 (Ansible)
 Validity comes from a real YAML parser (`core/automation` `checkYaml`, using the `yaml`
 package); a broken variant is used only if the parser blames the changed line. A fake Ansible run
 with Ansible-style output waits for a real output sample.
+
+## Code tiles level (mechanics step 6)
+
+- `fill-tiles` (Learn): fill the playbook's blanks (module, `commands`, `register`, debug module)
+  from chips with near-miss distractors (`ios_config`, `lines`, `vars`).

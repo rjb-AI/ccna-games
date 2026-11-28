@@ -23,7 +23,7 @@ import {
   rogueDhcpOutcome,
 } from '../../core/sim/security'
 
-export type DefenderKind = 'match' | 'trust' | 'outcome' | 'violation' | 'breakfix'
+export type DefenderKind = 'match' | 'match-pairs' | 'trust' | 'outcome' | 'violation' | 'breakfix'
 export interface DefenderParams {
   kinds: readonly DefenderKind[]
 }
@@ -109,6 +109,32 @@ function picture(s: Scene, showAttacker: boolean): TopologyVisual {
 }
 
 // ---------- questions ----------
+
+/**
+ * Match pairs: four attacks, each to the defence that stops it (core ATTACKS[...].defense).
+ * Attacks are picked so their defences differ, so every defence is used once.
+ */
+function matchPairsQuestion(rng: Rng): LabelsQuestion {
+  const picked: Attack[] = []
+  for (const a of rng.shuffle(Object.keys(ATTACKS) as Attack[])) {
+    if (!picked.some((p) => ATTACKS[p].defense === ATTACKS[a].defense)) picked.push(a)
+    if (picked.length === 4) break
+  }
+  return {
+    prompt: 'Match each attack to the defence that stops it.',
+    items: picked.map((a) => ({ id: a, label: ATTACKS[a].label })),
+    options: rng.shuffle(picked.map((a) => DEFENSES[ATTACKS[a].defense].label)),
+    display: 'pairs',
+    answers: Object.fromEntries(picked.map((a) => [a, DEFENSES[ATTACKS[a].defense].label])),
+    explanation: picked
+      .map(
+        (a) =>
+          `${ATTACKS[a].label}: ${DEFENSES[ATTACKS[a].defense].label} (${DEFENSES[ATTACKS[a].defense].how})`,
+      )
+      .join(' '),
+    hint: 'What does each attack fake or flood? The defence checks exactly that.',
+  }
+}
 
 function matchQuestion(rng: Rng): ChoiceQuestion {
   const attack = rng.pick(Object.keys(ATTACKS) as Attack[])
@@ -326,6 +352,8 @@ export function makeQuestion(params: DefenderParams, seed: number, step: number)
   switch (rng.pick(params.kinds)) {
     case 'match':
       return { kind: 'choice', q: matchQuestion(rng) }
+    case 'match-pairs':
+      return { kind: 'labels', q: matchPairsQuestion(rng) }
     case 'trust':
       return { kind: 'labels', q: trustQuestion(rng) }
     case 'outcome':

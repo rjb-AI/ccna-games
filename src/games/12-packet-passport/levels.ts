@@ -57,6 +57,15 @@ export const LEVELS: readonly LevelDef<PassportParams>[] = [
     topics: ['v2-4.3'],
   },
   {
+    id: 'nat-tiles',
+    title: 'Learn: build the NAT config',
+    mode: 'learn',
+    generatorParams: { kinds: ['nat-tiles'] },
+    passScore: 60,
+    questionCount: 4,
+    topics: ['v2-4.3'],
+  },
+  {
     id: 'border-drill',
     title: 'Drill: border control',
     mode: 'drill',

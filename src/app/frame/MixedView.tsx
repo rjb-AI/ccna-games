@@ -2,9 +2,11 @@ import { BinsView } from './BinsView'
 import { BitsView } from './BitsView'
 import { ChoiceView } from './ChoiceView'
 import { DiagramLabelsView } from './DiagramLabelsView'
+import { PairsView } from './PairsView'
 import { SwipeView } from './SwipeView'
 import { CliView } from './CliView'
 import { TapView } from './TapView'
+import { TilesView } from './TilesView'
 import { WireBoardView } from './WireBoardView'
 import type { WiresResponse } from './wires'
 import { FieldsView } from './FieldsView'
@@ -22,6 +24,7 @@ const LABEL_VIEWS = {
   bins: BinsView,
   diagram: DiagramLabelsView,
   swipe: SwipeView,
+  pairs: PairsView,
 } as const
 
 export function MixedView(props: QuestionViewProps<MixedQuestion, MixedResponse>) {
@@ -32,6 +35,15 @@ export function MixedView(props: QuestionViewProps<MixedQuestion, MixedResponse>
         {...rest}
         question={m.q}
         response={response !== null && isCli(response) ? response : null}
+      />
+    )
+  }
+  if (m.kind === 'tiles') {
+    return (
+      <TilesView
+        {...rest}
+        question={m.q}
+        response={Array.isArray(response) ? (response as readonly string[]) : null}
       />
     )
   }

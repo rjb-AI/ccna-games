@@ -7,8 +7,8 @@ of each column.
 ## Doing
 
 - **Game-like mechanics, in the MECHANICS.md build order** (user: "do them in the order you
-  suggested"). Steps 1-5 done (bins, tap the diagram, labels on the diagram, swipe deck, bit
-  board). Now: step 6, match pairs and code tiles; then match pairs and code tiles, packet path, grid placement. Still to
+  suggested"). Steps 1-6 done (bins, tap the diagram, labels on the diagram, swipe deck, bit
+  board, match pairs and code tiles). Now: step 7, packet path; then match pairs and code tiles, packet path, grid placement. Still to
   move onto the diagram: Airwaves channels (needs a floor-plan visual), AP ports. Before each: inspiration from `docs/INSPIRATION.md` (user: look up
   games of each type first). Still to move onto tapping: Neighbor Detective (tap the mistake),
   Longest Match rows, ACL/YAML bad line, router ID row.
@@ -62,6 +62,13 @@ Reusable interaction kinds, then which games use them:
 - **Fix the file**: Playbook Runner, tap lines to indent/outdent YAML.
 
 ## Done
+
+- 28 Nov: **Match pairs and code tiles** (mechanics step 6). Match pairs (`PairsView`): tap one
+  card on each side; both cards show the pair's number, and tapping again moves the link. Code
+  tiles (`TilesView`): config lines with blanks, filled from a chip bank that keeps a gap where
+  each chip came from. New levels: Port Defender match attacks to defences, Packet Passport
+  build the NAT config (PAT or static), Playbook Runner build the playbook. The NAT table now
+  uses match pairs.
 
 - 28 Nov: **Bit board** (mechanics step 5): one row of 8 bits per octet with place values,
   each octet's value live, the whole value and its /prefix live, broken mask rules named (core
