@@ -229,3 +229,10 @@ export function vlsm(block: Subnet, requests: readonly VlsmRequest[]): VlsmAlloc
 export function formatSubnet(s: Subnet): string {
   return `${formatIPv4(s.network)}/${s.prefix}`
 }
+
+/** Can this be the destination of an ordinary unicast packet routed through the table? */
+export function isRoutableUnicast(ip: IPv4): boolean {
+  return !['loopback', 'link-local', 'multicast', 'this-network', 'reserved', 'broadcast'].includes(
+    classifyIPv4(ip),
+  )
+}

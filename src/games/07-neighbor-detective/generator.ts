@@ -31,7 +31,7 @@ const MODELS = ['C9300-24P', 'C9200-48T', 'C9300-48U', 'C9200L-24T']
 function actualNetwork(rng: Rng): Topology {
   const n = rng.int(2, 3)
   const devices: Device[] = [
-    { id: 'core', kind: 'switch', label: 'CORE1', model: 'C9500-24Y4C', x: 500, y: 0 },
+    { id: 'core', kind: 'switch', label: 'CORE1', model: 'C9500-16X', x: 500, y: 0 },
   ]
   const links: Link[] = []
   for (let i = 0; i < n; i++) {

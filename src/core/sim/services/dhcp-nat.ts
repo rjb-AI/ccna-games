@@ -122,7 +122,7 @@ export const NAT_FAULTS: Record<NatFault, { label: string; explain: string }> = 
       'The LAN interface must be "ip nat inside" and the Internet-facing one "ip nat outside". Swapped, nothing from the LAN is translated.',
   },
   'inside-missing': {
-    label: 'The LAN interface is missing ip nat inside',
+    label: 'The LAN interface has no ip nat command at all',
     explain:
       'NAT only translates traffic that arrives on an "ip nat inside" interface and leaves an "ip nat outside" one.',
   },

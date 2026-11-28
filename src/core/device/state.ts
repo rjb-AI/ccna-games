@@ -129,6 +129,11 @@ export function toVlanSet(list: readonly number[]): VlanSet {
   return sorted.length === 4094 ? 'all' : sorted
 }
 
+/** VLANs 1002-1005: the old FDDI/Token Ring defaults, always present and never usable. */
+export function isReservedVlan(v: number): boolean {
+  return v >= 1002 && v <= 1005
+}
+
 export function defaultVlanName(id: number): string {
   // Cisco names a new VLAN "VLAN" plus the id padded to four digits, e.g. VLAN0010.
   return id === 1 ? 'default' : `VLAN${String(id).padStart(4, '0')}`
@@ -212,16 +217,23 @@ export function getInterface(s: DeviceState, name: string): Interface {
  * with trunk or desirable. Source: Cisco "Configuring VLAN Trunks" (Catalyst 9300 IOS XE), DTP
  * mode table; see reference/facts/cli-switch-facts.md.
  */
-export function operationalMode(i: Interface, peer?: Peer): 'access' | 'trunk' {
+export type OperationalMode = 'access' | 'trunk' | 'routed'
+
+export function operationalMode(i: Interface, peer?: Peer): OperationalMode {
+  // A routed port (no switchport) or an SVI is not a switchport at all.
+  if (!i.switchport) return 'routed'
   if (i.mode === 'trunk' || i.mode === 'access') return i.mode
-  const far = peer?.mode
+  // Only another switch speaks DTP. A PC, phone, AP or hypervisor never does, so a dynamic port
+  // facing one stays an access port; a trunk to them must be set with switchport mode trunk.
+  if (peer?.kind !== 'switch') return 'access'
+  const far = peer.mode
   if (!far || far === 'access') return 'access'
   if (i.mode === 'dynamic-desirable') return 'trunk'
   return far === 'trunk' || far === 'dynamic-desirable' ? 'trunk' : 'access'
 }
 
 /** Operational mode of a port on a device, looking up its peer. */
-export function portMode(s: DeviceState, name: string): 'access' | 'trunk' {
+export function portMode(s: DeviceState, name: string): OperationalMode {
   return operationalMode(getInterface(s, name), s.peers[name])
 }
 
@@ -235,7 +247,8 @@ export function toSwitchConfig(s: DeviceState): SwitchConfig {
     .filter((i) => i.kind === 'ethernet' && i.switchport)
     .map((i) => ({
       name: i.name,
-      mode: operationalMode(i, s.peers[i.name]),
+      mode:
+        operationalMode(i, s.peers[i.name]) === 'trunk' ? ('trunk' as const) : ('access' as const),
       accessVlan: i.accessVlan,
       nativeVlan: i.nativeVlan,
       allowedVlans: allowedAmong(i.allowedVlans, Object.keys(s.vlans).map(Number)),

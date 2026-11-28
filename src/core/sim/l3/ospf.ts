@@ -154,7 +154,7 @@ export const OSPF_FAULTS: Record<
     stuck: 'They never become neighbors.',
   },
   'subnet-mismatch': {
-    label: 'Interfaces in different subnets',
+    label: 'Subnet or mask mismatch',
     explain:
       'On a broadcast link like Ethernet, OSPFv2 checks that the hello comes from the same subnet with the same mask (RFC 2328 10.5).',
     fix: 'Fix the IP address or mask so both are in the same subnet.',

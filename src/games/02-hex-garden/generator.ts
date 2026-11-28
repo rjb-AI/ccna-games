@@ -185,7 +185,7 @@ function compressQuestion(rng: Rng): ChoiceQuestion {
   const answer = compressIPv6(a)
   const wrongs = pickWrong(rng, compressWrongs(a), a, answer)
   return {
-    prompt: 'What is the shortest legal way to write this address?',
+    prompt: 'What is the recommended short form (RFC 5952) of this address?',
     facts: [{ label: 'Full address', value: expandIPv6(a) }],
     choices: rng.shuffle([answer, ...wrongs.map((w) => w.text)]),
     answer,

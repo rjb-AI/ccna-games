@@ -134,7 +134,11 @@ function trustQuestion(rng: Rng): LabelsQuestion {
   return {
     prompt: 'You turn on DHCP snooping for this VLAN. Mark each port trusted or untrusted.',
     visuals: [picture(s, false)],
-    items: s.ports.map((p) => ({ id: p.name, label: `${p.name} (${ROLE_TEXT[p.role]})` })),
+    items: s.ports.map((p) => ({
+      id: p.name,
+      // With the company DHCP server on this switch, the uplink leads only to the router.
+      label: `${p.name} (${p.role === 'uplink' && s.serverLocal ? 'uplink to the core router' : ROLE_TEXT[p.role]})`,
+    })),
     options: ['Trusted', 'Untrusted'],
     answers: Object.fromEntries(
       s.ports.map((p) => [p.name, correctTrust(p.role) ? 'Trusted' : 'Untrusted']),
@@ -154,6 +158,15 @@ function setupFor(
   return { snooping, dai, ports: s.ports.map((p) => ({ ...p, trusted: trust(p) })) }
 }
 
+function trustedList(setup: SnoopSetup): string {
+  return (
+    setup.ports
+      .filter((p) => p.trusted)
+      .map((p) => p.name)
+      .join(', ') || 'none'
+  )
+}
+
 function setupTable(setup: SnoopSetup) {
   return {
     kind: 'table' as const,
@@ -162,13 +175,10 @@ function setupTable(setup: SnoopSetup) {
     rows: [
       ['DHCP snooping', setup.snooping ? 'on' : 'off'],
       ['Dynamic ARP Inspection', setup.dai ? 'on' : 'off'],
-      [
-        'Trusted ports',
-        setup.ports
-          .filter((p) => p.trusted)
-          .map((p) => p.name)
-          .join(', ') || 'none',
-      ],
+      // Two separate IOS settings (ip dhcp snooping trust / ip arp inspection trust). This
+      // scenario always trusts the same ports for both.
+      ['DHCP snooping trusted ports', trustedList(setup)],
+      ...(setup.dai ? [['DAI trusted ports', trustedList(setup)]] : []),
     ],
   }
 }

@@ -9,7 +9,7 @@
  * ports to a single end device, never to another switch.
  */
 import { shortIfName } from '../cli/ifname'
-import { channelStatus, explainModes } from '../sim/l2/etherchannel'
+import { channelStatus } from '../sim/l2/etherchannel'
 import { type StpInput, electStp, rootWithout } from '../sim/l2/stp'
 import type { Route } from '../sim/l3/routing'
 import { routeFor, routeFor6 } from '../sim/l3/static'
@@ -87,6 +87,9 @@ export interface Evaluation {
 
 const short = shortIfName
 
+const ROUTED = (n: string) =>
+  `${n} is a routed port (no switchport); it must be a switchport. Type "switchport" on it.`
+
 function withPriority(input: StpInput, id: string, priority: number): StpInput {
   return { ...input, bridges: input.bridges.map((b) => (b.id === id ? { ...b, priority } : b)) }
 }
@@ -120,7 +123,7 @@ export function evaluate(s: DeviceState, r: Requirement): Evaluation {
       const i = iface(s, r.port)
       if (!i) return { met: false, problems: [`There is no ${r.port}.`] }
       const n = short(r.port)
-      if (!i.switchport) p.push(`${n} is a routed port; it must be a switchport.`)
+      if (!i.switchport) p.push(ROUTED(n))
       if (i.mode !== 'access') p.push(`${n} should be set to access mode.`)
       if (i.accessVlan !== r.vlan) p.push(`${n} should be in VLAN ${r.vlan}.`)
       if (!(r.vlan in s.vlans)) p.push(`VLAN ${r.vlan} doesn't exist yet.`)
@@ -133,6 +136,7 @@ export function evaluate(s: DeviceState, r: Requirement): Evaluation {
       const i = iface(s, r.port)
       if (!i) return { met: false, problems: [`There is no ${r.port}.`] }
       const n = short(r.port)
+      if (!i.switchport) p.push(ROUTED(n))
       if (i.mode !== 'access')
         p.push(`${n} should be an access port (the phone tags voice itself).`)
       if (i.accessVlan !== r.dataVlan)
@@ -147,7 +151,8 @@ export function evaluate(s: DeviceState, r: Requirement): Evaluation {
       const i = iface(s, r.port)
       if (!i) return { met: false, problems: [`There is no ${r.port}.`] }
       const n = short(r.port)
-      if (portMode(s, r.port) !== 'trunk') p.push(`${n} should be a trunk.`)
+      if (!i.switchport) p.push(ROUTED(n))
+      else if (portMode(s, r.port) !== 'trunk') p.push(`${n} should be a trunk.`)
       const allowed = i.allowedVlans
       const missing = r.vlans.filter((v) => !allowsVlan(allowed, v))
       if (missing.length) p.push(`${n} doesn't allow VLAN ${vlanRangeText(missing)}.`)
@@ -167,15 +172,8 @@ export function evaluate(s: DeviceState, r: Requirement): Evaluation {
         p.push(`${notIn.map(short).join(' and ')} should be in channel group ${r.group}.`)
       for (const m of ch?.members ?? []) {
         if (!r.ports.includes(m.name)) p.push(`${short(m.name)} shouldn't be in this channel.`)
-        else if (m.state !== 'bundled') {
-          const peer = s.peers[m.name]
-          const mode = iface(s, m.name)?.channelGroup?.mode
-          p.push(
-            `${short(m.name)} isn't bundled: ${
-              mode && peer?.channelMode ? explainModes(mode, peer.channelMode) : m.reason
-            }`,
-          )
-        }
+        // The member's own reason (mode pair, settings that differ, shut down) is the real one.
+        else if (m.state !== 'bundled') p.push(`${short(m.name)} isn't bundled: ${m.reason}`)
       }
       if (r.trunkVlans) {
         const po = `Port-channel${r.group}`
@@ -317,19 +315,28 @@ export function solutionLines(r: Requirement): string[] {
         `switchport trunk allowed vlan ${vlanRangeText(r.vlans)}`,
         'no shutdown',
       ])
-    case 'channel':
+    case 'channel': {
+      // Members get the same switchport settings as the bundle, then join it.
+      const trunk = r.trunkVlans
+        ? [
+            ' switchport mode trunk',
+            ` switchport trunk native vlan ${r.native}`,
+            ` switchport trunk allowed vlan ${vlanRangeText(r.trunkVlans)}`,
+          ]
+        : []
       return [
         `interface range ${r.ports.map(short).join(' , ')}`,
+        ...trunk,
         ` channel-group ${r.group} mode ${formingMode(r.peerMode)}`,
         ' no shutdown',
         ...(r.trunkVlans
-          ? ifLines(`Port-channel${r.group}`, [
-              'switchport mode trunk',
-              `switchport trunk native vlan ${r.native}`,
-              `switchport trunk allowed vlan ${vlanRangeText(r.trunkVlans)}`,
-            ])
+          ? ifLines(
+              `Port-channel${r.group}`,
+              trunk.map((l) => l.trim()),
+            )
           : []),
       ]
+    }
     case 'svi':
       return [
         'ip routing',

@@ -213,7 +213,7 @@ function passportQuestion(rng: Rng, nat: boolean): ChoiceQuestion {
     const prev = back ? headersBack(w.path, i - 1) : headersThere(w.path, i - 1)
     cands.push({
       h: { ...h, srcMac: prev.srcMac, dstMac: prev.dstMac },
-      why: 'Those are the MACs from the previous link.',
+      why: `Those are the MACs from the ${back ? 'next' : 'previous'} link along the path.`,
     })
   }
   const wrong = rng
