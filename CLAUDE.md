@@ -131,11 +131,14 @@ tests/e2e/                 ← Playwright tests
   compared by value), `LabelsView` (give every item one of a few options), `OrderView` (put items
   in order, drag-and-drop), `BinsView` (a `LabelsQuestion` with `display: 'bins'`: sort cards
   into a fixed grid of bins; `'pairs'` for `PairsView`, tap-tap match pairs; `'swipe'` and
-  `'diagram'` too), `TilesView` (code tiles: config lines with blanks filled from a chip bank),
+  `'diagram'` too), `TilesView` (code tiles: config lines with blanks filled from a chip bank; `chipWhy` says
+  what a wrong chip does),
   `BitsView` (the bit board), `ExitsView` (be the device: tap every port a packet leaves by, on
   the diagram or a device faceplate; the real result replays as packets moving, `flows`),
   `WireBoardView` (drag wires onto connectors), `TapView` (answer by
-  tapping a switch or port on a topology; `after` shows what happens next), `CliView` (the command line). Mix them in one game
+  tapping a switch or port on a topology; `after` shows what happens next, `afterFor` what
+  happens for the spot you picked, such as a test volley; flows can `fade` past a hop or end
+  `dropped`), `CliView` (the command line). Mix them in one game
   with `MixedView`. Diagrams must fit a 390px phone (layout.ts decides; `layout.test.ts`
   enforces it): ports become tap-to-read dots before anything scrolls sideways. Any question can show `visuals`: topology
   diagrams (`src/app/topology`), tables, and numbered configuration lines. Build new kinds and

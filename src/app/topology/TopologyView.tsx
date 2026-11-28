@@ -307,9 +307,16 @@ export function TopologyView({
               animationDelay: `${f.delayMs ?? 0}ms`,
             } as CSSProperties
             return (
-              <g key={`flow-${i}`} className="topo-packet" style={style} aria-hidden="true">
+              <g
+                key={`flow-${i}`}
+                className={['topo-packet', f.dropped && 'is-dropped', f.fades && 'fades']
+                  .filter(Boolean)
+                  .join(' ')}
+                style={style}
+                aria-hidden="true"
+              >
                 <circle cx={x0} cy={y0} r={12 * u} strokeWidth={3 * u} />
-                {f.label && (
+                {(f.label || f.dropped) && (
                   <text
                     x={x0}
                     y={y0 - font * 1.1}
@@ -318,7 +325,7 @@ export function TopologyView({
                     dominantBaseline="central"
                     textAnchor="middle"
                   >
-                    {f.label}
+                    {[f.label, f.dropped && '✕'].filter(Boolean).join(' ')}
                   </text>
                 )}
               </g>
@@ -337,7 +344,9 @@ export function TopologyView({
             ? describe(inspect)
             : linksHidden
               ? 'Link speeds and costs are hidden to fit: tap a port to read one.'
-              : 'Tap a dot to see its port, or a switch for its details.'}
+              : pick
+                ? 'Tap a dot to see its port.'
+                : 'Tap a dot to see its port, or a switch for its details.'}
         </p>
       )}
     </figure>

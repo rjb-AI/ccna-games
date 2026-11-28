@@ -14,6 +14,13 @@ export interface TapQuestion {
    * (same device and port ids), usually with packets moving (`flows`). Replayable.
    */
   after?: TopologyVisual
+  /**
+   * What happens next for the spot you picked, keyed by option (falls back to `after`): for
+   * example a test volley run against your placement. Pictures and tables shown under it.
+   */
+  afterFor?: Readonly<Record<string, TapAfter>>
+  /** The heading over the replay, default "What happens next". */
+  afterTitle?: string
   /** Other pictures or tables shown under it. */
   visuals?: readonly Visual[]
   /** Device ids, or port ids "device:port", that can be picked. */
@@ -24,6 +31,11 @@ export interface TapQuestion {
   whyWrong?: Readonly<Record<string, string>>
   explanation: string
   hint?: string
+}
+
+export interface TapAfter {
+  diagram: TopologyVisual
+  visuals?: readonly Visual[]
 }
 
 export type TapResponse = string

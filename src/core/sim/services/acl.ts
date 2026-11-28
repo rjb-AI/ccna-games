@@ -8,6 +8,7 @@
  * Lines are shown in IOS configuration syntax (input), never as show-command output.
  */
 import { type IPv4, formatIPv4, matchesWildcard } from '../../netmath'
+import type { Crossing } from '../../topology'
 
 export type AclAction = 'permit' | 'deny'
 export type AclProtocol = 'ip' | 'tcp' | 'udp' | 'icmp'
@@ -113,22 +114,53 @@ export function formatPort(m: PortMatch): string {
   return m.op === 'range' ? `range ${m.from} ${m.to}` : `${m.op} ${m.port}`
 }
 
+export type EntryField = 'action' | 'protocol' | 'src' | 'srcPort' | 'dst' | 'dstPort'
+
+/** An entry's words, field by field, in IOS order (for blanking one field out). */
+export function formatEntryParts(
+  e: AclEntry,
+  kind: Acl['kind'],
+): { field: EntryField; text: string }[] {
+  if (kind === 'standard')
+    return [
+      { field: 'action', text: e.action },
+      { field: 'src', text: formatAddr(e.src) },
+    ]
+  const parts: { field: EntryField; text: string }[] = [
+    { field: 'action', text: e.action },
+    { field: 'protocol', text: e.protocol },
+    { field: 'src', text: formatAddr(e.src) },
+  ]
+  if (e.srcPort) parts.push({ field: 'srcPort', text: formatPort(e.srcPort) })
+  parts.push({ field: 'dst', text: formatAddr(e.dst ?? { kind: 'any' }) })
+  if (e.dstPort) parts.push({ field: 'dstPort', text: formatPort(e.dstPort) })
+  return parts
+}
+
 /** One entry as it appears under "ip access-list" (without the "access-list N" prefix). */
 export function formatEntry(e: AclEntry, kind: Acl['kind']): string {
-  if (kind === 'standard') return `${e.action} ${formatAddr(e.src)}`
-  const parts = [e.action, e.protocol, formatAddr(e.src)]
-  if (e.srcPort) parts.push(formatPort(e.srcPort))
-  parts.push(formatAddr(e.dst ?? { kind: 'any' }))
-  if (e.dstPort) parts.push(formatPort(e.dstPort))
-  return parts.join(' ')
+  return formatEntryParts(e, kind)
+    .map((p) => p.text)
+    .join(' ')
+}
+
+/** The "access-list N " prefix of a numbered ACL's lines ('' for a named ACL). */
+export function aclLinePrefix(acl: Acl): string {
+  return /^\d+$/.test(acl.id) ? `access-list ${acl.id} ` : ''
 }
 
 /** Numbered ACL lines: "access-list 110 permit tcp ...". */
 export function formatAclLines(acl: Acl): string[] {
-  const numbered = /^\d+$/.test(acl.id)
-  return acl.entries.map((e) =>
-    numbered ? `access-list ${acl.id} ${formatEntry(e, acl.kind)}` : formatEntry(e, acl.kind),
-  )
+  return acl.entries.map((e) => aclLinePrefix(acl) + formatEntry(e, acl.kind))
+}
+
+/**
+ * The configuration that creates the ACL: numbered lines, or for a named ACL the
+ * "ip access-list standard|extended NAME" line with its entries indented under it.
+ */
+export function formatAclConfig(acl: Acl): string[] {
+  if (aclLinePrefix(acl)) return formatAclLines(acl)
+  return [`ip access-list ${acl.kind} ${acl.id}`, ...formatAclLines(acl).map((l) => ` ${l}`)]
 }
 
 export function describePacket(p: Packet): string {
@@ -145,6 +177,37 @@ export function describeVerdict(v: AclVerdict): string {
 /** Packets on which two ACLs disagree. Used to compare a candidate with the intended policy. */
 export function disagreements(a: Acl, b: Acl, packets: readonly Packet[]): Packet[] {
   return packets.filter((p) => evaluateAcl(a, p).action !== evaluateAcl(b, p).action)
+}
+
+// ---------- applied to an interface ----------
+
+/** What happens to a packet on its path when an ACL is applied at one interface and direction. */
+export interface PathRun {
+  delivered: boolean
+  /** Index into the crossings where the ACL dropped it, or null. */
+  droppedAt: number | null
+  /** The ACL's verdict, or null when the packet never crosses that interface that way. */
+  verdict: AclVerdict | null
+}
+
+/**
+ * "ip access-group <acl> in|out" at one interface: only packets crossing that interface in that
+ * direction are checked; a deny drops the packet there. Other interfaces let everything through.
+ */
+export function runAclOnPath(
+  crossings: readonly Crossing[],
+  at: Crossing,
+  acl: Acl,
+  p: Packet,
+): PathRun {
+  const i = crossings.findIndex(
+    (c) => c.device === at.device && c.port === at.port && c.dir === at.dir,
+  )
+  if (i < 0) return { delivered: true, droppedAt: null, verdict: null }
+  const verdict = evaluateAcl(acl, p)
+  return verdict.action === 'deny'
+    ? { delivered: false, droppedAt: i, verdict }
+    : { delivered: true, droppedAt: null, verdict }
 }
 
 /** Well-known ports used in questions. Source: IANA Service Name and Port Number Registry. */

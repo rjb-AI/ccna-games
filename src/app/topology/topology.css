@@ -289,6 +289,18 @@
   stroke: var(--color-bg);
 }
 
+.topo-packet text {
+  fill: var(--color-text);
+  paint-order: stroke;
+  stroke: var(--color-surface);
+  stroke-linejoin: round;
+  font-family: var(--font-mono);
+}
+
+.topo-packet.is-dropped circle {
+  fill: var(--color-bad);
+}
+
 @keyframes topo-packet {
   from {
     transform: translate(0, 0);
@@ -298,9 +310,32 @@
   }
 }
 
+.topo-packet.fades {
+  animation-name: topo-packet-pass;
+}
+
+@keyframes topo-packet-pass {
+  0% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  85% {
+    transform: translate(var(--dx), var(--dy));
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy));
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .topo-packet {
     animation: none;
     transform: translate(var(--dx), var(--dy));
+  }
+
+  .topo-packet.fades {
+    display: none;
   }
 }

@@ -8,9 +8,9 @@ of each column.
 
 - **Game-like mechanics, in the MECHANICS.md build order** (user: "do them in the order you
   suggested"). Steps 1-6 done (bins, tap the diagram, labels on the diagram, swipe deck, bit
-  board, match pairs and code tiles). Now: step 7, packet path (parts 1-3 done: be the switch, the
-  passport journey, what-happens-next replays for STP and FHRP; next: part 4, ACL place it
-  and test it with a test volley); then match pairs and code tiles, packet path, grid placement. Still to
+  board, match pairs and code tiles). Now: step 7, packet path (done: be the switch, the passport
+  journey, what-happens-next replays for STP and FHRP, ACL place it and test it); next: step 8,
+  grid placement (VLSM packing, AP placement, Blueprint racks). Still to
   move onto the diagram: Airwaves channels (needs a floor-plan visual), AP ports. Before each: inspiration from `docs/INSPIRATION.md` (user: look up
   games of each type first). Still to move onto tapping: Neighbor Detective (tap the mistake),
   Longest Match rows, ACL/YAML bad line, router ID row.
@@ -65,6 +65,15 @@ Reusable interaction kinds, then which games use them:
 
 ## Done
 
+- 28 Nov: **Packet path, part 4: ACL place it and test it** (mechanics step 7 done). ACL
+  Bouncer `place-test`: tap the interface for a named ACL, then a test volley of three packets
+  runs against your placement, with drops drawn red where they stop and a results table (tap
+  questions can now show what happens for the spot you picked, `afterFor`). `build-tiles`: build
+  the ACL from tiles; each wrong tile is fired at the test packets and says how many it gets
+  wrong. New core: `pathBetween`, `crossingsOf`, `runAclOnPath`, `formatEntryParts`,
+  `formatAclConfig` (named ACLs). System: packets can fade after a hop or end dropped; code and
+  tiles captions are optional; the tap button reads "Tap the diagram to answer" (one line). All
+  5,912 existing questions are unchanged.
 - 28 Nov: **Packet path, part 3: what happens next** (mechanics step 7). Tap questions can
   carry the diagram after the event (`after`), shown once answered with packets moving and a
   Replay button. Root Wars "cut a link, watch the tree heal": tap the blocked port that opens,

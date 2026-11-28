@@ -10,6 +10,9 @@ import {
   evaluateAcl,
   formatAclLines,
   formatEntry,
+  formatAclConfig,
+  formatEntryParts,
+  runAclOnPath,
 } from './acl'
 
 const ip = (s: string) => parseIPv4(s) as number
@@ -156,5 +159,60 @@ describe('ACL evaluation', () => {
     }
     expect(disagreements(acl, ext([web, permitAny]), [p])).toEqual([p])
     expect(disagreements(acl, acl, [p])).toEqual([])
+  })
+})
+
+describe('ACL applied to an interface', () => {
+  const std: Acl = {
+    kind: 'standard',
+    id: '10',
+    entries: [
+      { action: 'deny', protocol: 'ip', src: { kind: 'host', ip: ip('10.1.1.5') } },
+      { action: 'permit', protocol: 'ip', src: { kind: 'any' } },
+    ],
+  }
+  const path = [
+    { device: 'R1', port: 'Gi0/0', dir: 'in' as const },
+    { device: 'R1', port: 'Gi0/1', dir: 'out' as const },
+    { device: 'R2', port: 'Gi0/0', dir: 'in' as const },
+  ]
+  const bad: Packet = { protocol: 'icmp', src: ip('10.1.1.5'), dst: ip('10.9.9.9') }
+  const good: Packet = { protocol: 'icmp', src: ip('10.1.1.6'), dst: ip('10.9.9.9') }
+
+  it('drops a denied packet at the interface it is applied to', () => {
+    expect(runAclOnPath(path, path[1] as (typeof path)[1], std, bad)).toEqual({
+      delivered: false,
+      droppedAt: 1,
+      verdict: { action: 'deny', line: 0 },
+    })
+    expect(runAclOnPath(path, path[1] as (typeof path)[1], std, good).delivered).toBe(true)
+  })
+
+  it('only checks packets crossing that interface in that direction', () => {
+    const r = runAclOnPath(path, { device: 'R1', port: 'Gi0/0', dir: 'out' }, std, bad)
+    expect(r).toEqual({ delivered: true, droppedAt: null, verdict: null })
+    expect(runAclOnPath(path, { device: 'R3', port: 'Gi0/0', dir: 'in' }, std, bad).delivered).toBe(
+      true,
+    )
+  })
+
+  it('named ACL configuration: the ip access-list line, then indented entries', () => {
+    const named: Acl = { ...ext([blockNet]), id: 'BLOCK-SALES' }
+    expect(formatAclConfig(named)).toEqual([
+      'ip access-list extended BLOCK-SALES',
+      ' deny ip 10.1.1.0 0.0.0.255 any',
+    ])
+    expect(formatAclConfig(ext([blockNet]))).toEqual(formatAclLines(ext([blockNet])))
+  })
+
+  it('entry parts join to the formatted entry', () => {
+    for (const e of [web, blockNet]) {
+      expect(
+        formatEntryParts(e, 'extended')
+          .map((p) => p.text)
+          .join(' '),
+      ).toBe(formatEntry(e, 'extended'))
+    }
+    expect(formatEntryParts(web, 'standard').map((p) => p.field)).toEqual(['action', 'src'])
   })
 })
