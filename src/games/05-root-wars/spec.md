@@ -11,6 +11,7 @@ Topics: v2-2.5 (Rapid PVST+)
 | `roles`          | Learn     | Label every port (or two switches' ports on big topologies): root, designated, alternate                           | 50%  | –     |
 | `election-drill` | Drill     | Root and root-port questions, link speeds only (no costs shown)                                                    | 70%  | 180 s |
 | `events`         | Break-Fix | A link fails: which blocked port starts forwarding? Plus PortFast, BPDU guard, root guard and loop guard scenarios | 60%  | –     |
+| `cli-root`       | Learn     | Command line on one switch: make it the root (priority or root primary), or the backup root (root secondary)       | 60%  | –     |
 
 The CLI config round ("make SW-B root primary for VLAN 10") arrives with the command line in M5.
 
@@ -48,3 +49,12 @@ which port took over and why.
 
 `generator.test.ts`: deterministic; one right answer; root answer re-derived from the table on
 screen; role labels complete and include a blocked port; reconvergence shows the failed link.
+
+## Command-line level (M5)
+
+`cli-root` judges by `core/device/checks.ts`: `stp-root` reruns `electStp` with the switch's new
+priority; `stp-backup` checks the current root stays root and that `rootWithout` (the root failed)
+picks this switch. Backup rounds only use scenes where the root was lowered to 24576 or less,
+every other switch is at 32768, and losing the root leaves one connected network. Allowed:
+`spanning-tree vlan N priority P`, `spanning-tree vlan N root primary|secondary`, configure
+terminal, exit, end, do.

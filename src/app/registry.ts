@@ -4,6 +4,7 @@ import { hexGarden } from '../games/02-hex-garden'
 import { cableDoctor } from '../games/03-cable-doctor'
 import { frameRun } from '../games/04-frame-run'
 import { rootWars } from '../games/05-root-wars'
+import { portArchitect } from '../games/06-port-architect'
 import { neighborDetective } from '../games/07-neighbor-detective'
 import { longestMatch } from '../games/08-longest-match'
 import { adjacencyQuest } from '../games/09-adjacency-quest'
@@ -25,6 +26,7 @@ export const GAMES: readonly RegisteredGame[] = [
   cableDoctor,
   frameRun,
   rootWars,
+  portArchitect,
   neighborDetective,
   longestMatch,
   adjacencyQuest,

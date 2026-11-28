@@ -132,6 +132,15 @@ tests/e2e/                 ← Playwright tests
   visuals there so every game can reuse them.
 - Show device settings as tables or configuration lines (input syntax). Never draw something that
   looks like show-command output without a real sample (rule 3).
+- Command-line rounds use the `cli` kind (`src/app/frame/cli.ts`, `CliView.tsx`). The question
+  carries a start `DeviceState`, the allowed command ids, and `Requirement`s from
+  `src/core/device/checks.ts`; the answer is the typed lines, replayed by `src/core/cli` and judged
+  on the resulting state, never the text. Add commands to `src/core/cli/commands.ts` (one
+  catalogue; levels pick by id) with tests in `src/core/cli/cli.test.ts`. Device messages (lines
+  starting `%`) must come from a real sample; anything else the game says is a note.
+- Show commands live in `src/core/cli/show.ts` and print through `src/core/output`. Each template
+  that has a TextFSM parser is registered in `src/core/output/validation.ts`; CI parses 200 random
+  outputs per command with the real parser (`npm run test:outputs`) and fails on any difference.
 - `src/app/registry.test.ts` checks every level: unique ids, real blueprint tags, and that every
   step generates. `tests/e2e/levels.spec.ts` opens every level at phone and desktop size.
 
@@ -144,6 +153,7 @@ npm run format       # Prettier (write); CI runs format:check
 npm run typecheck    # tsc -b
 npm test             # Vitest unit tests
 npm run test:e2e     # Playwright (builds, then serves the production build)
+npm run test:outputs # generated show output parsed by the real TextFSM templates (needs python3 + textfsm)
 npm run build        # production build to dist/
 ```
 

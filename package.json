@@ -12,7 +12,8 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:outputs": "OUTPUT_CASES=1 vitest run src/core/output && python3 scripts/validate_outputs.py"
   },
   "dependencies": {
     "dexie": "^4.4.7",

@@ -1,6 +1,6 @@
 import fc from 'fast-check'
 import { describe, expect, it } from 'vitest'
-import { checkMixed } from '../../app/frame/mixed'
+import { checkMixed, rightResponse } from '../../app/frame/mixed'
 import { OSPF_FAULTS, OSPF_STATES } from '../../core/sim/l3'
 import { parseIPv4 } from '../../core/netmath'
 import { makeQuestion } from './generator'
@@ -16,12 +16,7 @@ describe('Adjacency Quest generator', () => {
         fc.property(seed, fc.nat(20), (s, st) => {
           const m = makeQuestion(l.generatorParams, s, st)
           expect(m).toEqual(makeQuestion(l.generatorParams, s, st))
-          const right =
-            m.kind === 'choice'
-              ? m.q.answer
-              : m.kind === 'fields' || m.kind === 'labels'
-                ? m.q.answers
-                : m.q.answer
+          const right = rightResponse(m)
           expect(checkMixed(m, right as never).correct).toBe(true)
           if (m.kind === 'choice') {
             expect(new Set(m.q.choices).size).toBe(m.q.choices.length)
