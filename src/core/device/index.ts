@@ -69,3 +69,4 @@ export function carriesVlan(p: SwitchPort, vlan: number): boolean {
 export function withPort(sw: SwitchConfig, p: SwitchPort): SwitchConfig {
   return { ...sw, ports: sw.ports.map((x) => (x.name === p.name ? p : x)) }
 }
+export * from './ssh'

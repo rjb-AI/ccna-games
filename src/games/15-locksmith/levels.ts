@@ -1,0 +1,60 @@
+import type { LevelDef } from '../../core/game'
+import type { LockParams } from './generator'
+
+export const LEVELS: readonly LevelDef<LockParams>[] = [
+  {
+    id: 'ssh',
+    title: 'Learn: set up SSH',
+    mode: 'learn',
+    generatorParams: { kinds: ['ssh-needed', 'ssh-order'] },
+    passScore: 60,
+    questionCount: 5,
+    topics: ['v2-4.1'],
+  },
+  {
+    id: 'aaa',
+    title: 'Learn: TACACS+, RADIUS and AAA',
+    mode: 'learn',
+    generatorParams: { kinds: ['aaa-sort', 'aaa-config'] },
+    passScore: 60,
+    questionCount: 5,
+    topics: ['v2-4.1'],
+  },
+  {
+    id: 'files',
+    title: 'Learn: SCP, SFTP, TFTP, FTP',
+    mode: 'learn',
+    generatorParams: { kinds: ['files'] },
+    passScore: 60,
+    questionCount: 4,
+    topics: ['v2-4.2'],
+  },
+  {
+    id: 'vpn',
+    title: 'Learn: IPsec VPNs',
+    mode: 'learn',
+    generatorParams: { kinds: ['vpn'] },
+    passScore: 60,
+    questionCount: 6,
+    topics: ['v2-4.5'],
+  },
+  {
+    id: 'keys-drill',
+    title: 'Drill: the locksmith’s round',
+    mode: 'drill',
+    generatorParams: { kinds: ['aaa-config', 'files', 'vpn', 'ssh-breakfix'] },
+    passScore: 70,
+    timeLimit: 200,
+    questionCount: 10,
+    topics: ['v2-4.1', 'v2-4.2', 'v2-4.5'],
+  },
+  {
+    id: 'breakfix',
+    title: 'Break-Fix: SSH won’t let me in',
+    mode: 'breakfix',
+    generatorParams: { kinds: ['ssh-breakfix'] },
+    passScore: 60,
+    questionCount: 5,
+    topics: ['v2-4.1'],
+  },
+]
